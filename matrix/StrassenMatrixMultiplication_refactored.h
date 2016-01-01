@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <cblas.h>
 
-void strassen_matrix_multiplication(
+void strassen_matrix_multiplication_worker(
     const unsigned int m,
     const unsigned int n,
     const unsigned int k,
@@ -26,10 +26,10 @@ void strassen_base_matrix_multiplication(
         return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
             m, n, k,
             1, 
-            A, k, 
-            B, n, 
+            A, incRowA, 
+            B, incRowB, 
             0, 
-            C, n);    
+            C, incRowC);    
 }
 
 // M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
@@ -63,7 +63,7 @@ Dtype* strassen_make_M1_submatrix(
 
     // M1 = T1 * T2
     Dtype* M1 = make_matrix(m, k);
-    strassen_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m, n, k,
         T1, k,
         T2, k,
@@ -90,13 +90,15 @@ Dtype* strassen_make_M2_submatrix(
     // T1 = A_2_1 + A_2_2
     Dtype* T1 = make_matrix(m, k);
 
+
+
     matrix_addition(m, k,
         A_2_1, incRowA_2_1,
         A_2_2, incRowA_2_2,
         T1, k);
 
     Dtype* M2 = make_matrix(m, k);
-    strassen_matrix_multiplication(
+    strassen_base_matrix_multiplication(
         m, n, k,
         T1, k,
         B_1_1, incRowB_1_1,
@@ -129,11 +131,11 @@ Dtype* strassen_make_M3_submatrix(
 
     Dtype* M3 = make_matrix(m, k);
     
-    strassen_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m, n, k,
-        A_1_1, k,
+        A_1_1, incRowA_1_1,
         T1, k,
-        M3, k);
+        M3, k); 
 
     remove_matrix(T1);
     return M3;
@@ -160,9 +162,9 @@ Dtype* strassen_make_M4_submatrix(
         T1, k);
 
     Dtype* M4 = make_matrix(m, k);
-    strassen_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m, n, k,
-        A_2_2, k,
+        A_2_2, incRowA_2_2,
         T1, k,
         M4, k);
 
@@ -190,7 +192,7 @@ Dtype* strassen_make_M5_submatrix(
         T1, k);
 
     Dtype* M5 = make_matrix(m, k);
-    strassen_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m, n, k,
         T1, k,
         B_2_2, incRowB_2_2,
@@ -230,7 +232,7 @@ Dtype* strassen_make_M6_submatrix(
 
     // M6 = T1 * T2
     Dtype* M6 = make_matrix(m, k);
-    strassen_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m, n, k,
         T1, k,
         T2, k,
@@ -271,7 +273,7 @@ Dtype* strassen_make_M7_submatrix(
 
     // M7 = T1 * T2
     Dtype* M7 = make_matrix(m, k);
-    strassen_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m, n, k,
         T1, k,
         T2, k,
@@ -365,10 +367,39 @@ void strassen_calculate_C_2_2(
 
 }
 
+
+void strassen_matrix_multiplication(
+    const unsigned int m,
+    const unsigned int n,
+    const unsigned int k,
+    const Dtype *A, const int incRowA,
+    const Dtype *B, const int incRowB,
+    Dtype *C, const int incRowC){
+
+    int max_length = maxThree(m, n, k);
+    int new_length = getNumberLargerThanXAndIsPowerOfTwo(max_length);
+    Dtype* newA = pad_matrix(A, m, k, incRowA, new_length, new_length);
+    Dtype* newB = pad_matrix(B, k, n, incRowB, new_length, new_length);
+    Dtype* newC = pad_matrix(C, m, n, incRowC, new_length, new_length);
+
+    strassen_matrix_multiplication_worker(
+        new_length, new_length, new_length,
+        newA, new_length,
+        newB, new_length,
+        newC, new_length);
+
+    matrix_copyTo(newC, new_length, new_length, new_length,
+                  C, m, n, incRowC);
+
+    // remove the extra workspace
+    remove_matrix(newA);
+    remove_matrix(newB);
+    remove_matrix(newC);
+}
 /* this script only works for square matrices 
    where the length is a power of 2
 */
-void strassen_matrix_multiplication(
+void strassen_matrix_multiplication_worker(
     const unsigned int m,
     const unsigned int n,
     const unsigned int k,
@@ -384,7 +415,7 @@ void strassen_matrix_multiplication(
 	/* check if the base case has reached
        the base condition is defined as when all the dimensions are smaller than 256
 	*/
-	if(m <= 256 && n <= 256 && k <= 256){
+	if(m <= 2 && n <= 2 && k <= 2){
         return strassen_base_matrix_multiplication(
             m, n, k,
             A, incRowA,
@@ -443,13 +474,13 @@ void strassen_matrix_multiplication(
 	construct M1 by the formula
 	M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
 	*/    
+
     Dtype* M1 = strassen_make_M1_submatrix(
             m1, n1, k1,    
             A_1_1, incRowA,
             A_2_2, incRowA,
             B_1_1, incRowB,
             B_2_2, incRowB);
-
 
     /*
 	construct M2 by the formula
