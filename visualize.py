@@ -14,11 +14,11 @@ def getScatter(file_name):
 	with open(file_name, 'rb') as datafile:
 		reader = csv.reader(datafile, delimiter=',')
 		data = [row for row in reader]
-		xs = [int(row[0]) for row in data if float(row[-1]) > 0]
-		ys = [log(float(row[-1]), 8) for row in data if float(row[-1]) > 0]
+		xs = [log(float(row[0]),2) for row in data if float(row[-1]) > 0]
+		ys = [log(float(row[-1]), 2) for row in data if float(row[-1]) > 0]
 		return xs, ys
 
-def plotScatter(file_names, title):
+def plotScatter(file_names, title=None, ylabel=None, xlabel=None):
 	import matplotlib.pyplot as plt
 	fig = plt.figure()
 	ax1 = fig.add_subplot(111)
@@ -30,7 +30,12 @@ def plotScatter(file_names, title):
 		i+=1
 
 	plt.legend(loc='lower right')
-	plt.title(title)
+	if title:
+		plt.title(title)
+	if xlabel:
+		plt.xlabel(xlabel)
+	if ylabel:
+		plt.ylabel(ylabel)
 	plt.show()
 
 def normalize(data):
