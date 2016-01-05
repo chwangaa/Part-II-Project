@@ -9,8 +9,11 @@ void matrix_addition(
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC){
 
+    Dtype* A_base;
+    Dtype* B_base;
+    Dtype* C_base;
     for(int i = 0; i < M; i++){
-        for(int j = 0; j < N; j ++){
+        for(int j = 0; j < N; j++){
             C[i*incRowC+j] = A[i*incRowA+j] + B[i*incRowB+j];
         }
     }

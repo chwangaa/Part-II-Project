@@ -2,15 +2,17 @@
  * 2016 Jan 01
  * Chihang Wang
  * in this version, the matrix is first padded
- * to a square matrix
- * and the size is a power of 2 
+ * to a larger matrix, where each dimension can be written as
+ * A * (2 ^ k) where A is in a small range, i.e.
+ * 1 <= A <= Limit_Of_A
+ * Limit_Of_A will be a pre defined parameter
 */
-
+ 
 #ifndef STRASSEN_MATRIX_MULTIPLICATION_H
 #define STRASSEN_MATRIX_MULTIPLICATION_H
 
 #include "setting.h"
-#include "matrix_util.h"
+#include "strassen_util.h"
 #include "matrix_arithmetic.h"
 #include "SimpleMatrixMultiplication.h"
 #include <stdio.h>
@@ -24,21 +26,6 @@ void strassen_matrix_multiplication_worker(
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC);
 
-void strassen_base_matrix_multiplication(
-    const unsigned int m,
-    const unsigned int n,
-    const unsigned int k,
-    const Dtype *A, const int incRowA,
-    const Dtype *B, const int incRowB,
-    Dtype *C, const int incRowC){
-        return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-            m, n, k,
-            1, 
-            A, incRowA, 
-            B, incRowB, 
-            0, 
-            C, incRowC);    
-}
 
 // M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
 Dtype* strassen_make_M1_submatrix(
@@ -97,6 +84,8 @@ Dtype* strassen_make_M2_submatrix(
     */
     // T1 = A_2_1 + A_2_2
     Dtype* T1 = make_matrix(m, k);
+
+
 
     matrix_addition(m, k,
         A_2_1, incRowA_2_1,
@@ -382,19 +371,20 @@ void strassen_matrix_multiplication(
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC){
 
-    int max_length = maxThree(m, n, k);
-    int new_length = getNumberLargerThanXAndIsPowerOfTwo(max_length);
-    Dtype* newA = pad_matrix(A, m, k, incRowA, new_length, new_length);
-    Dtype* newB = pad_matrix(B, k, n, incRowB, new_length, new_length);
-    Dtype* newC = pad_matrix(C, m, n, incRowC, new_length, new_length);
+    int newM = strassenCalculateNewSize(m);
+    int newN = strassenCalculateNewSize(n);
+    int newK = strassenCalculateNewSize(k);
+    Dtype* newA = pad_matrix(A, m, k, incRowA, newM, newK);
+    Dtype* newB = pad_matrix(B, k, n, incRowB, newK, newN);
+    Dtype* newC = pad_matrix(C, m, n, incRowC, newM, newN);
 
     strassen_matrix_multiplication_worker(
-        new_length, new_length, new_length,
-        newA, new_length,
-        newB, new_length,
-        newC, new_length);
+        newM, newN, newK,
+        newA, newK,
+        newB, newN,
+        newC, newN);
 
-    matrix_copyTo(newC, new_length, new_length, new_length,
+    matrix_copyTo(newC, newM, newN, newN,
                   C, m, n, incRowC);
 
     // remove the extra workspace
@@ -413,67 +403,74 @@ void strassen_matrix_multiplication_worker(
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC){
 
-	// the matrices must have positive dimension
-	assert(m > 0);
-	assert(n > 0);
-	assert(k > 0);
-    // the matrix must be a square matrix
-	assert(m == n);
-    assert(m == k);
-	/* check if the base case has reached
+    // the matrices must have positive dimension
+    assert(m > 0);
+    assert(n > 0);
+    assert(k > 0);
+    
+    /* check if the base case has reached
        the base condition is defined as when all the dimensions are smaller than 256
-	*/
-	if(m <= 2 && n <= 2 && k <= 2){
+    */
+    if(baseConditionReached(m, n, k)){
         return strassen_base_matrix_multiplication(
             m, n, k,
             A, incRowA,
             B, incRowB,
             C, incRowC);
-	}
-	/*
-	We divide A, B, C into subsections as the following:
-	A = |A_1_1, A_1_2|   B = |B_1_1, B_1_2|   C = |C_1_1, C_1_2|
-	    |A_2_1, A_2_2|       |B_2_1, B_2_2|       |C_2_1, C_2_2|
+    }
+    /*
+    We divide A, B, C into subsections as the following:
+    A = |A_1_1, A_1_2|   B = |B_1_1, B_1_2|   C = |C_1_1, C_1_2|
+        |A_2_1, A_2_2|       |B_2_1, B_2_2|       |C_2_1, C_2_2|
 
 
-	We first calculate 7 temporary matrices as the follow:
-	M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
-	M2 = (A_2_1 + A_2_2) * B_1_1
-	M3 = A_1_1 * (B_1_2 - B_2_2)
-	M4 = A_2_2 * (B_2_1 - B_1_1)
-	M5 = (A_1_1 + A_1_2) * B_2_2
-	M6 = (A_2_1 - A_1_1) * (B_1_1 + B_1_2)
-	M7 = (A_1_2 - A_2_2) * (B_2_1 + B_2_2)
+    We first calculate 7 temporary matrices as the follow:
+    M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
+    M2 = (A_2_1 + A_2_2) * B_1_1
+    M3 = A_1_1 * (B_1_2 - B_2_2)
+    M4 = A_2_2 * (B_2_1 - B_1_1)
+    M5 = (A_1_1 + A_1_2) * B_2_2
+    M6 = (A_2_1 - A_1_1) * (B_1_1 + B_1_2)
+    M7 = (A_1_2 - A_2_2) * (B_2_1 + B_2_2)
 
-	Then, we compute C section by section according to:
-	C_1_1 = M1 + M4 - M5 + M7
-	C_1_2 = M3 + M5
-	C_2_1 = M2 + M4
-	C_2_2 = M1 - M2 + M3 + M6 
-	*/
-	const unsigned int m1 = m / 2;	
-	const unsigned int n1 = n / 2;
-	const unsigned int k1 = k / 2;
-	
-	const Dtype* A_1_1 = A;
-	const Dtype* A_1_2 = A_1_1 + k1;
-	const Dtype* A_2_1 = A_1_1 + incRowA*m1;
-	const Dtype* A_2_2 = A_2_1 + k1;
+    Then, we compute C section by section according to:
+    C_1_1 = M1 + M4 - M5 + M7
+    C_1_2 = M3 + M5
+    C_2_1 = M2 + M4
+    C_2_2 = M1 - M2 + M3 + M6 
+    */
+    const unsigned int m1 = m / 2;
+    const unsigned int m2 = m - m1; 
+    const unsigned int n1 = n / 2;
+    const unsigned int n2 = n - n1;
+    const unsigned int k1 = k / 2;
+    const unsigned int k2 = k - k1;
+    
+    const Dtype* A_1_1 = A;
+    const Dtype* A_1_2 = A_1_1 + k1;
+    const Dtype* A_2_1 = A_1_1 + incRowA*m1;
+    const Dtype* A_2_2 = A_2_1 + k1;
 
-	Dtype* C_1_1 = C;
-	Dtype* C_1_2 = C_1_1 + n1;
-	Dtype* C_2_1 = C_1_1 + incRowC*m1;
-	Dtype* C_2_2 = C_2_1 + n1;
+    Dtype* C_1_1 = C;
+    Dtype* C_1_2 = C_1_1 + n1;
+    Dtype* C_2_1 = C_1_1 + incRowC*m1;
+    Dtype* C_2_2 = C_2_1 + n1;
 
-	const Dtype* B_1_1 = B;
-	const Dtype* B_1_2 = B_1_1 + n1;
-	const Dtype* B_2_1 = B_1_1 + incRowB*k1;
-	const Dtype* B_2_2 = B_2_1 + n1;
+    const Dtype* B_1_1 = B;
+    const Dtype* B_1_2 = B_1_1 + n1;
+    const Dtype* B_2_1 = B_1_1 + incRowB*k1;
+    const Dtype* B_2_2 = B_2_1 + n1;
 
-	/*
-	construct M1 by the formula
-	M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
-	*/    
+    // this version assumes the dimension is divisible by 2
+    assert(m1 == m2);
+    assert(n1 == n2);
+    assert(k1 == k2);
+
+    // first construct the temporary for A_1_1 + A_2_2
+    /*
+    construct M1 by the formula
+    M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
+    */    
 
     Dtype* M1 = strassen_make_M1_submatrix(
             m1, n1, k1,    
@@ -483,8 +480,8 @@ void strassen_matrix_multiplication_worker(
             B_2_2, incRowB);
 
     /*
-	construct M2 by the formula
-	M2 = (A_2_1 + A_2_2) * B_1_1
+    construct M2 by the formula
+    M2 = (A_2_1 + A_2_2) * B_1_1
     */
     Dtype* M2 = strassen_make_M2_submatrix(
             m1, n1, k1,    
@@ -493,8 +490,8 @@ void strassen_matrix_multiplication_worker(
             B_1_1, incRowB);    
 
     /*
-	construct M3 by the formula
-	M3 = A_1_1 * (B_1_2 - B_2_2)
+    construct M3 by the formula
+    M3 = A_1_1 * (B_1_2 - B_2_2)
     */
     Dtype* M3 = strassen_make_M3_submatrix(
             m1, n1, k1,
@@ -503,8 +500,8 @@ void strassen_matrix_multiplication_worker(
             B_2_2, incRowB);
 
     /*
-	construct M4 by the formula
-	M4 = A_2_2 * (B_2_1 - B_1_1)
+    construct M4 by the formula
+    M4 = A_2_2 * (B_2_1 - B_1_1)
     */
     Dtype* M4 = strassen_make_M4_submatrix(
             m1, k1, k1,
@@ -514,8 +511,8 @@ void strassen_matrix_multiplication_worker(
 
 
     /*
-	construct M5 by the formula
-	M5 = (A_1_1 + A_1_2) * B_2_2
+    construct M5 by the formula
+    M5 = (A_1_1 + A_1_2) * B_2_2
     */
     Dtype* M5 = strassen_make_M5_submatrix(
             m1, n1, k1,
@@ -525,10 +522,10 @@ void strassen_matrix_multiplication_worker(
 
 
 
-	/*
-	construct M6 by the formula
-	M6 = (A_2_1 - A_1_1) * (B_1_1 + B_1_2)
-	*/
+    /*
+    construct M6 by the formula
+    M6 = (A_2_1 - A_1_1) * (B_1_1 + B_1_2)
+    */
     Dtype* M6 = strassen_make_M6_submatrix(
             m1, n1, k1,    
             A_2_1, incRowA,
@@ -536,10 +533,10 @@ void strassen_matrix_multiplication_worker(
             B_1_1, incRowB,
             B_1_2, incRowB);
 
-	/*
-	construct M7 by the formula
-	M7 = (A_1_2 - A_2_2) * (B_2_1 + B_2_2)
-	*/
+    /*
+    construct M7 by the formula
+    M7 = (A_1_2 - A_2_2) * (B_2_1 + B_2_2)
+    */
     Dtype* M7 = strassen_make_M7_submatrix(
             m1, n1, k1,    
             A_1_2, incRowA,
