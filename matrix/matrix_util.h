@@ -46,7 +46,7 @@ static inline void print_matrix(Dtype* matrix, int M, int N, int incRow){
 	}
 }
 
-static inline void matrix_copyTo(
+void matrix_copyTo(
 	Dtype* const from_matrix, int M, int N, int incRowFrom,
 	Dtype* to_matrix, int M_to, int N_to, int incRowTo){
 
@@ -60,7 +60,7 @@ static inline void matrix_copyTo(
 	}
 }
 
-static inline Dtype* matrix_copy(
+Dtype* matrix_copy(
 	Dtype* const from_matrix, int M, int N, int incRowFrom){
 
 	Dtype* new_matrix = make_matrix(M, N);

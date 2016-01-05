@@ -93,7 +93,7 @@ Dtype* strassen_make_M2_submatrix(
         T1, k);
 
     Dtype* M2 = make_matrix(m, k);
-    strassen_base_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m, n, k,
         T1, k,
         B_1_1, incRowB_1_1,

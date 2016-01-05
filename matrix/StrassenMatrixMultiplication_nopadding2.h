@@ -113,7 +113,7 @@ Dtype* strassen_make_M2_submatrix(
     Dtype* T1 = addDifferentSizedMatrix(A_2_1, m2, k1, incRowA_2_1,
                                         A_2_2, a22m, a22n, incRowA_2_2);
     Dtype* M2 = make_matrix(m2, n1);
-    strassen_base_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m2, n1, k1,
         T1, k1,
         B_1_1, incRowB_1_1,
@@ -137,19 +137,6 @@ Dtype* strassen_make_M3_submatrix(
     const int k1 = b12m;
     const int n1 = b12n;
 
-    /*
-    construct M3 by the formula
-    M3 = A_1_1 * (B_1_2 - B_2_2)
-    */
-    // Dtype* const T1 = make_matrix(k1, n1);
-    // // T1 = B_1_2
-    // matrix_copyTo(B_1_2, b12m, b12n, incRowB_1_2,
-    //               T1, k1, n1, n1);
-    // // T1 -= B_2_2
-    // matrix_partial_subtraction(
-    //     T1, k1, n1, n1,
-    //     B_2_2, b22m, b22n, incRowB_2_2
-    //     );
     Dtype* T1 = subtractDifferentSizedMatrix(B_1_2, b12m, b12n, incRowB_1_2,
                                              B_2_2, b22m, b22n, incRowB_2_2);
     Dtype* M3 = make_matrix(m1, n1);
@@ -242,23 +229,7 @@ Dtype* strassen_make_M6_submatrix(
     const int m1 = a11m;
     const int k1 = a11n;
     const int n1 = b11n;
-    /*
-    construct M6 by the formula
-    M6 = (A_1_1 - A_2_1) * (B_1_1 + B_1_2)
-    */    
-    // Dtype* const T1 = make_matrix(m1, k1);
-    // Dtype* const T2 = make_matrix(k1, n1);
-    // // T1 = (A_1_1 - A_2_1)
-    // matrix_copyTo(A_1_1, a11m, a11n, incRowA_1_1,
-    //               T1, m1, k1, k1);
-    // matrix_partial_subtraction(T1, m1, k1, k1,
-    //               A_2_1, a21m, a21n, incRowA_2_1);
-   
-    // // T2 = (B_1_1 + B_1_2)
-    // matrix_copyTo(B_1_1, b11m, b11n, incRowB_1_1,
-    //               T2, k1, n1, n1);
-    // matrix_partial_addition(T2, k1, n1, n1,
-    //               B_1_2, b12m, b12n, incRowB_1_2);
+
     Dtype* T1 = subtractDifferentSizedMatrix(A_1_1, a11m, a11n, incRowA_1_1,
                                              A_2_1, a21m, a21n, incRowA_2_1);
     Dtype* T2 = addDifferentSizedMatrix(B_1_1, b11m, b11n, incRowB_1_1,
@@ -295,22 +266,7 @@ Dtype* strassen_make_M7_submatrix(
     int m1 = a12m;
     int n1 = b21n;
     int k2 = a12n;
-    /*
-    construct M7 by the formula
-    M7 = (A_1_2 - A_2_2) * (B_2_1 + B_2_2)
-    */
-    // Dtype* T1 = make_matrix(m1, k2);
-    // Dtype* T2 = make_matrix(k2, n1);    
-    // // T1 = (A_1_2 - A_2_2)
-    // matrix_copyTo(A_1_2, a12m, a12n, incRowA_1_2,
-    //               T1, m1, k2, k2);
-    // matrix_partial_subtraction(T1, m1, k2, k2,
-    //               A_2_2, a22m, a22n, incRowA_2_2);   
-    // // T2 = (B_2_1 + B_2_2)
-    // matrix_copyTo(B_2_1, b21m, b21n, incRowB_2_1,
-    //               T2, k2, n1, n1);
-    // matrix_partial_addition(T2, k2, n1, n1,
-    //               B_2_2, b22m, b22n, incRowB_2_2);
+
     Dtype* T1 = subtractDifferentSizedMatrix(A_1_2, a12m, a12n, incRowA_1_2,
                                              A_2_2, a22m, a22n, incRowA_2_2);    
     Dtype* T2 = addDifferentSizedMatrix(B_2_1, b21m, b21n, incRowB_2_1,

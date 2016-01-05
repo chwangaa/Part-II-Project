@@ -4,7 +4,7 @@
 #include "matrix_util.h"
 #include <stdbool.h>
 
-const int limit_X = 30;
+const int limit_X = 256;
 
 void strassen_base_matrix_multiplication(
     const unsigned int m,
@@ -13,18 +13,18 @@ void strassen_base_matrix_multiplication(
     const Dtype *A, const int incRowA,
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC){
-        // return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        //     m, n, k,
-        //     1, 
-        //     A, incRowA, 
-        //     B, incRowB, 
-        //     0, 
-        //     C, incRowC);  
-        return SimpleMatrixMultiplication(
+        return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
             m, n, k,
-            A, incRowA,
-            B, incRowB,
+            1, 
+            A, incRowA, 
+            B, incRowB, 
+            0, 
             C, incRowC);  
+        // return SimpleMatrixMultiplication(
+        //     m, n, k,
+        //     A, incRowA,
+        //     B, incRowB,
+        //     C, incRowC);  
 }
 
 void matrix_partial_addition(Dtype* result, int rM, int rN, int rincRow,

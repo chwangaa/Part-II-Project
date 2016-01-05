@@ -1,7 +1,7 @@
 #ifndef MATRIX_SETTING_H
 #define MATRIX_SETTING_H
 
-typedef int Dtype;
+typedef float Dtype;
 #define DEBUG 0
 
 #ifdef DEBUG

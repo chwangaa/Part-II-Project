@@ -2,7 +2,7 @@
 #define STRASSEN_MATRIX_MULTIPLICATION_H
 
 #include "setting.h"
-#include "matrix_util.h"
+#include "strassen_util.h"
 #include "matrix_arithmetic.h"
 #include "SimpleMatrixMultiplication.h"
 #include <stdio.h>
@@ -17,26 +17,19 @@ void strassen_matrix_multiplication(
     Dtype *C, const int incRowC){
 
 	// the matrices must have positive dimension
-	assert(m > 0);
-	assert(n > 0);
-	assert(k > 0);
+	debug_assert(m > 0);
+	debug_assert(n > 0);
+	debug_assert(k > 0);
 	
 	/* check if the base case has reached
 	   here we recurse until all the dimension are smaller than 2
 	*/
-	if(m <= 256 && n <= 256 && k <= 256){
-		// return SimpleMatrixMultiplication(
-		// 	m, n, k,
-		// 	A, incRowA,
-		// 	B, incRowB,
-		// 	C, incRowC);
-        return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+	if(m <= limit_X && n <= limit_X && k <= limit_X){
+        return strassen_base_matrix_multiplication(
             m, n, k,
-            1, 
-            A, k, 
-            B, n, 
-            0, 
-            C, n);
+            A, incRowA,
+            B, incRowB,
+            C, incRowC);
 	}
 
 
@@ -85,9 +78,9 @@ void strassen_matrix_multiplication(
 
 	// first construct the temporary for A_1_1 + A_2_2
 	// this version assumes square matrices, m1 == n1 == k1
-	assert(m1 == k1);
-	assert(m1 == n1);
-	assert(m1 == m2);
+	debug_assert(m1 == k1);
+	debug_assert(m1 == n1);
+	debug_assert(m1 == m2);
 	/*
 	construct M1 by the formula
 	M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
@@ -246,16 +239,11 @@ void strassen_matrix_multiplication(
     	M4, k1,
     	C_1_1, incRowC);
     // C_1_1 += M7
-    matrix_addition(m1, k1,
-    	C_1_1, incRowC,
-    	M7, k1,
-    	C_1_1, incRowC);
+    matrix_partial_addition(C_1_1, m1, k1, incRowC,
+                            M7, m1, k1, k1);
     // C_1_1 -= M5
-    matrix_subtraction(m1, k1,
-    	C_1_1, incRowC,
-    	M5, k1,
-    	C_1_1, incRowC);
-
+    matrix_partial_subtraction(C_1_1, m1, k1, incRowC,
+                            M5, m1, k1, k1);
     /*
     compute C_1_2 by the formula
     C_1_2 = M3 + M5
@@ -285,15 +273,11 @@ void strassen_matrix_multiplication(
     	C_2_2, incRowC);
     
     // C_2_2 += M3
-    matrix_addition(m1, k1,
-    	C_2_2, incRowC,
-    	M3, k1,
-    	C_2_2, incRowC);
+    matrix_partial_addition(C_2_2, m1, k1, incRowC,
+                            M3, m1, k1, k1);
     // C_2_2 += M6
-    matrix_addition(m1, k1,
-    	C_2_2, incRowC,
-    	M6, k1,
-    	C_2_2, incRowC);
+    matrix_partial_addition(C_2_2, m1, k1, incRowC,
+                            M6, m1, k1, k1);
 
     /*
     remove the working space

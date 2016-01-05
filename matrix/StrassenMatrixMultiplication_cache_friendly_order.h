@@ -2,7 +2,7 @@
 #define STRASSEN_MATRIX_MULTIPLICATION_H
 
 #include "setting.h"
-#include "matrix_util.h"
+#include "strassen_util.h"
 #include "matrix_arithmetic.h"
 #include "SimpleMatrixMultiplication.h"
 #include <stdio.h>
@@ -24,19 +24,12 @@ void strassen_matrix_multiplication(
 	/* check if the base case has reached
 	   here we recurse until all the dimension are smaller than 2
 	*/
-	if(m <= 256 && n <= 256 && k <= 256){
-		// return SimpleMatrixMultiplication(
-		// 	m, n, k,
-		// 	A, incRowA,
-		// 	B, incRowB,
-		// 	C, incRowC);
-        return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+	if(m <= limit_X && n <= limit_X && k <= limit_X){
+        return strassen_base_matrix_multiplication(
             m, n, k,
-            1, 
-            A, k, 
-            B, n, 
-            0, 
-            C, n);
+            A, incRowA,
+            B, incRowB,
+            C, incRowC);
 	}
 
 

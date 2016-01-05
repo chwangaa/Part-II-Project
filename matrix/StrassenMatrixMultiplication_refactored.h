@@ -10,7 +10,7 @@
 #define STRASSEN_MATRIX_MULTIPLICATION_H
 
 #include "setting.h"
-#include "matrix_util.h"
+#include "strassen_util.h"
 #include "matrix_arithmetic.h"
 #include "SimpleMatrixMultiplication.h"
 #include <stdio.h>
@@ -23,22 +23,6 @@ void strassen_matrix_multiplication_worker(
     const Dtype *A, const int incRowA,
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC);
-
-void strassen_base_matrix_multiplication(
-    const unsigned int m,
-    const unsigned int n,
-    const unsigned int k,
-    const Dtype *A, const int incRowA,
-    const Dtype *B, const int incRowB,
-    Dtype *C, const int incRowC){
-        return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-            m, n, k,
-            1, 
-            A, incRowA, 
-            B, incRowB, 
-            0, 
-            C, incRowC);    
-}
 
 // M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
 Dtype* strassen_make_M1_submatrix(
@@ -104,7 +88,7 @@ Dtype* strassen_make_M2_submatrix(
         T1, k);
 
     Dtype* M2 = make_matrix(m, k);
-    strassen_base_matrix_multiplication(
+    strassen_matrix_multiplication_worker(
         m, n, k,
         T1, k,
         B_1_1, incRowB_1_1,
@@ -423,7 +407,7 @@ void strassen_matrix_multiplication_worker(
 	/* check if the base case has reached
        the base condition is defined as when all the dimensions are smaller than 256
 	*/
-	if(m <= 2 && n <= 2 && k <= 2){
+	if(m <= limit_X && n <= limit_X && k <= limit_X){
         return strassen_base_matrix_multiplication(
             m, n, k,
             A, incRowA,
