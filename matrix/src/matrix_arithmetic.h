@@ -1,6 +1,6 @@
 #ifndef MATRIX_ARITHMETIC_H
 #define MATRIX_ARITHMETIC_H
-#include "setting.h"
+#include "../setting.h"
 
 void matrix_addition(
     const unsigned int M,

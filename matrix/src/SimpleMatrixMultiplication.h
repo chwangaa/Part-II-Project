@@ -1,6 +1,6 @@
 #ifndef SIMPLE_MATRIX_MULTIPLICATION_H
 #define SIMPLE_MATRIX_MULTIPLICATION_H
-#include "setting.h"
+#include "../setting.h"
 
 void SimpleMatrixMultiplication(
     const unsigned int M,

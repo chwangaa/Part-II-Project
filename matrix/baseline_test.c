@@ -6,15 +6,14 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <string.h>
-// #include "SimpleMatrixMultiplication.h"
-#include "matrix/StrassenMatrixMultiplication.h"
-// #include "CacheObliviousMatrixMultiplication.h"
-// #include "StrassenMatrixMultiplication.h"
+#include "src/SimpleMatrixMultiplication.h"
+#include "src/matrix_arithmetic.h"
 #include "util.h"
 const unsigned int M_default = 16;
 const unsigned int N_default = 16;
 const unsigned int K_default = 16;
 const unsigned int spacingFactor = 1;
+
 int main(int argc, char** argv) {
   int M, N, K;
   if (argc < 4) {
@@ -38,15 +37,16 @@ int main(int argc, char** argv) {
 
     for(int i = 0; i < M; i++){
         for(int j = 0; j < K; j++){
-            A[i*incRowA+j] = 1;
+            A[i*incRowA+j] = 0;
         }
     }
     
     for(int i = 0; i < K; i++){
         for(int j = 0; j < N; j++){
-            B[i*incRowB+j] = 1;
+            B[i*incRowB+j] = 2;
         }
     }
+
     
     for(int i = 0; i < M; i++){
         for(int j = 0; j < N; j++){
@@ -58,41 +58,24 @@ int main(int argc, char** argv) {
 
 
     uint64_t start_time = timestamp_us();
-    // SimpleMatrixMultiplication(
-    //         M, N, K,
-    //         A, incRowA,
-    //         B, incRowB,
-    //         C, incRowC);
-    // cblas_gemm(
-    //         M, N, K,
-    //         A, incRowA,
-    //         B, incRowB,
-    //         C, incRowC);
-    // cache_oblivious_matrix_multiplication(
-    //         M, N, K,
-    //         A, incRowA,
-    //         B, incRowB,
-    //         C, incRowC);
-    strassen_matrix_multiplication(
-            M, N, K,
+    matrix_addition(
+            M, N,
             A, incRowA,
             B, incRowB,
             C, incRowC);
     uint64_t end_time = timestamp_us();
-    double m_second_taken = (double)(end_time - start_time) / 1000.0;
+    double m_second_taken = 18 * (double)(end_time - start_time) / 1000.0;
     int error = 0;
     for(int i = 0; i < M; i++){
     // 	// fprintf(stderr, "%d \n", fix16_to_int(M3[i]));
     	for(int j = 0; j < N; j++){
-            if(C[i*incRowC+j] != K){
+            if(C[i*incRowC+j] != 2){
                 error++;
-                fprintf(stderr, "%d %d %d \n", i, j, C[i*incRowC+j]);
+                fprintf(stderr, "%d %d %f \n", i, j, C[i*incRowC+j]);
             }
     		    // fprintf(stderr, "%d ", (int)C[i*incRowC+j]);
             }
         // fprintf(stderr, "\n");
     }
-    // print_matrix(C, M, N, N);
-    // printf("M,  N,  K,  error, Time taken \n");
     printf("%d, %d, %d, %d, %f \n", M, N, K, error, m_second_taken);
 }

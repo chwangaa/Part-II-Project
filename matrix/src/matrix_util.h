@@ -1,7 +1,9 @@
 #ifndef MATRIX_UTIL_H
 #define MATRIX_UTIL_H
-#include "setting.h"
+#include <assert.h>
+#include "../setting.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 Dtype* make_matrix(const unsigned int M, const unsigned int N){
     Dtype* new_matrix = (Dtype*)malloc(sizeof(Dtype)*M*N);
@@ -40,7 +42,7 @@ static inline void remove_matrix(Dtype* old_matrix){
 static inline void print_matrix(Dtype* matrix, int M, int N, int incRow){
 	for(int i = 0; i < M; i++){
 		for(int j = 0; j < N; j++){
-			fprintf(stderr, "%d ", (int)matrix[i*incRow+j]);
+			fprintf(stderr, "%f ", matrix[i*incRow+j]);
 		}
 		fprintf(stderr, "\n");
 	}
@@ -53,10 +55,7 @@ void matrix_copyTo(
 	assert(M_to <= M);
 	assert(N_to <= N);
 	for(int i = 0; i < M_to; i++){
-		memcpy(&to_matrix[i*incRowTo], &from_matrix[i*incRowFrom], sizeof(Dtype)*N_to);
-			// for(int j = 0; j < N_to; j++){
-			// 	to_matrix[i*incRowTo+j] = from_matrix[i*incRowFrom+j];
-			// }			
+		memcpy(&to_matrix[i*incRowTo], &from_matrix[i*incRowFrom], sizeof(Dtype)*N_to);			
 	}
 }
 

@@ -1,7 +1,7 @@
 #ifndef CBLAS_GEMM_H
 #define CBLAS_GEMM_H
 
-#include "setting.h"
+#include "../setting.h"
 #include <cblas.h>
 
 void cblas_gemm(
@@ -14,10 +14,10 @@ void cblas_gemm(
 	return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 		M, N, K,
 		1, 
-		A, K, 
-		B, N, 
-		1, 
-		C, N);
+		A, incRowA, 
+		B, incRowB, 
+		0, 
+		C, incRowC);
 }
 
 #endif

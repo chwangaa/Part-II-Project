@@ -6,15 +6,13 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <string.h>
-// #include "SimpleMatrixMultiplication.h"
-#include "matrix/StrassenMatrixMultiplication.h"
-// #include "CacheObliviousMatrixMultiplication.h"
-// #include "StrassenMatrixMultiplication.h"
+#include "StrassenMatrixMultiplication.h"
 #include "util.h"
 const unsigned int M_default = 16;
 const unsigned int N_default = 16;
 const unsigned int K_default = 16;
 const unsigned int spacingFactor = 1;
+
 int main(int argc, char** argv) {
   int M, N, K;
   if (argc < 4) {
@@ -47,6 +45,7 @@ int main(int argc, char** argv) {
             B[i*incRowB+j] = 1;
         }
     }
+
     
     for(int i = 0; i < M; i++){
         for(int j = 0; j < N; j++){
@@ -55,24 +54,13 @@ int main(int argc, char** argv) {
     }
 
 
-
+    // float temp[9] = {2, 2, 1, 2, 2, 1, 1, 1, 1};
+    // float temp1[2] = {2,1};
+    // float temp2[4] = {2, 2, 2, 2};
+    // A = temp1;
+    // B = temp2;
 
     uint64_t start_time = timestamp_us();
-    // SimpleMatrixMultiplication(
-    //         M, N, K,
-    //         A, incRowA,
-    //         B, incRowB,
-    //         C, incRowC);
-    // cblas_gemm(
-    //         M, N, K,
-    //         A, incRowA,
-    //         B, incRowB,
-    //         C, incRowC);
-    // cache_oblivious_matrix_multiplication(
-    //         M, N, K,
-    //         A, incRowA,
-    //         B, incRowB,
-    //         C, incRowC);
     strassen_matrix_multiplication(
             M, N, K,
             A, incRowA,
@@ -86,13 +74,11 @@ int main(int argc, char** argv) {
     	for(int j = 0; j < N; j++){
             if(C[i*incRowC+j] != K){
                 error++;
-                fprintf(stderr, "%d %d %d \n", i, j, C[i*incRowC+j]);
+                // fprintf(stderr, "%d %d %f \n", i, j, C[i*incRowC+j]);
             }
     		    // fprintf(stderr, "%d ", (int)C[i*incRowC+j]);
             }
         // fprintf(stderr, "\n");
     }
-    // print_matrix(C, M, N, N);
-    // printf("M,  N,  K,  error, Time taken \n");
     printf("%d, %d, %d, %d, %f \n", M, N, K, error, m_second_taken);
 }

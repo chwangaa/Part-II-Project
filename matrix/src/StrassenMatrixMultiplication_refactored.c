@@ -6,15 +6,8 @@
  * and the size is a power of 2 
 */
 
-#ifndef STRASSEN_MATRIX_MULTIPLICATION_H
-#define STRASSEN_MATRIX_MULTIPLICATION_H
-
-#include "setting.h"
 #include "strassen_util.h"
 #include "matrix_arithmetic.h"
-#include "SimpleMatrixMultiplication.h"
-#include <stdio.h>
-#include <cblas.h>
 
 void strassen_matrix_multiplication_worker(
     const unsigned int m,
@@ -578,5 +571,3 @@ void strassen_matrix_multiplication_worker(
     remove_matrix(M6);
     remove_matrix(M7);
 }
-
-#endif

@@ -1,10 +1,10 @@
 #ifndef STRASSEN_UTIL_H
 #define STRASSEN_UTIL_H
-#include "setting.h"
+#include "../setting.h"
 #include "matrix_util.h"
+#include "Cblas_GEMM.h"
+#include "SimpleMatrixMultiplication.h"
 #include <stdbool.h>
-
-const int limit_X = 256;
 
 void strassen_base_matrix_multiplication(
     const unsigned int m,
@@ -13,18 +13,19 @@ void strassen_base_matrix_multiplication(
     const Dtype *A, const int incRowA,
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC){
-        return cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-            m, n, k,
-            1, 
-            A, incRowA, 
-            B, incRowB, 
-            0, 
-            C, incRowC);  
-        // return SimpleMatrixMultiplication(
-        //     m, n, k,
-        //     A, incRowA,
-        //     B, incRowB,
-        //     C, incRowC);  
+        #ifdef GEMM
+	        return cblas_gemm(
+	            m, n, k,
+	            A, incRowA, 
+	            B, incRowB, 
+	            C, incRowC);  
+		#else        
+	        return SimpleMatrixMultiplication(
+	            m, n, k,
+	            A, incRowA,
+	            B, incRowB,
+	            C, incRowC);  
+        #endif
 }
 
 void matrix_partial_addition(Dtype* result, int rM, int rN, int rincRow,
@@ -160,16 +161,19 @@ bool baseConditionReached(const unsigned int m,
                           const unsigned int n,
                           const unsigned int k){
 
-    if(sizeSmallerThanLimit(m) && sizeSmallerThanLimit(n) && sizeSmallerThanLimit(k)){
+    if(sizeSmallerThanLimit(m) || sizeSmallerThanLimit(n) || sizeSmallerThanLimit(k)){
         return true;
-    }
-    // if all dimensions are larger than the limit, then clearly the condition is not yet reached
-    if(sizeOkay(m) && sizeOkay(n) && sizeOkay(k)){
-        return false;
     }
     else{
-        return true;
+    	return false;
     }
+    // // if all dimensions are larger than the limit, then clearly the condition is not yet reached
+    // if(sizeOkay(m) && sizeOkay(n) && sizeOkay(k)){
+    //     return false;
+    // }
+    // else{
+    //     return true;
+    // }
 }
 
 Dtype* padMatrixToPowerSquareMatrix(Dtype* old_matrix, const unsigned int M, const unsigned int N,
