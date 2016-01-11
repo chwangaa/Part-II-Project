@@ -8,6 +8,7 @@
 #include <string.h>
 #include "StrassenMatrixMultiplication.h"
 #include "util.h"
+#include "setting.h"
 const unsigned int M_default = 16;
 const unsigned int N_default = 16;
 const unsigned int K_default = 16;
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
             A, incRowA,
             B, incRowB,
             C, incRowC);
+    
     uint64_t end_time = timestamp_us();
     double m_second_taken = (double)(end_time - start_time) / 1000.0;
     int error = 0;

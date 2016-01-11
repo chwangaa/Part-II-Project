@@ -149,7 +149,7 @@ bool sizeOkay(const unsigned int X){
 }
 
 bool sizeSmallerThanLimit(const unsigned int X){
-    if(X <= limit_X){
+    if(X < limit_X){
         return true;
     }
     else{
