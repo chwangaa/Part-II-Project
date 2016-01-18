@@ -7,7 +7,7 @@ LIBRARIES=-lm -lcblas
 DEPENDENCIES = 
 
 BLIS_PREFIX = $(HOME)/blis
-BLIS_LIB = $(BLIS_PREFIX)/lib/libblis.a
+BLIS_LIB = $(BLIS_PREFIX)/lib/libblis-0.1.8-29-sandybridge.a
 BLIS_INC = $(BLIS_PREFIX)/include/blis
 all: nopadding padsquare power base sgemm minimalspace
 
@@ -29,6 +29,12 @@ strassen_test.o: strassen_test.c setting.h
 strassen-minimalspace.o: src/StrassenMatrixMultiplication_minimalspace.c
 	gcc -std=c99 -I$(BLIS_INC) -O3 -c -o strassen-minimalspace.o src/StrassenMatrixMultiplication_minimalspace.c
 
+packed-strassen-minimalspace.o: src/PackedStrassenMatrixMultiplication.c
+	gcc -std=c99 -w -I$(BLIS_INC) -O3 -c -o packed-strassen-minimalspace.o src/PackedStrassenMatrixMultiplication.c
+
+packed_strassen_test.o: packed_strassen_test.c setting.h
+	gcc -std=c99 -w -O3 -c -o packed_strassen_test.o packed_strassen_test.c
+
 base:
 	gcc -g -std=c99 -O3 -o test/base_addition baseline_test.c
 
@@ -42,16 +48,20 @@ nopadding: strassen_test.o strassen-nopadding.o
 	gcc -g -std=c99 -O3 -o test/nopadding strassen_test.o strassen-nopadding.o -lcblas
 
 minimalspace: strassen_test.o strassen-minimalspace.o
-	gcc -std=c99 strassen_test.o strassen-minimalspace.o -O3 $(BLIS_LIB) -o test/minimalspace -lm -fopenmp
+	gcc -std=c99 strassen_test.o strassen-minimalspace.o -g -O3 $(BLIS_LIB) -o test/minimalspace -lm -fopenmp
+
+packed_strassen: packed_strassen_test.o packed-strassen-minimalspace.o
+	gcc -std=c99 -w packed_strassen_test.o packed-strassen-minimalspace.o -g -O3 $(BLIS_LIB) -o test/packed -lm -fopenmp
+
 
 sgemm:
 	gcc -std=c99 -O3 -o test/sgemm sgemm_test.c -lcblas -g
 
 blis_gemm_main.o: blis_gemm_test.c
-	gcc -std=c99 -O3 -g -I$(BLIS_INC) -c -o blis_gemm_test.o blis_gemm_test.c	
+	gcc -std=c99 -g -I$(BLIS_INC) -c -o blis_gemm_test.o blis_gemm_test.c	
 
 blis_gemm: blis_gemm_main.o
-	gcc -std=c99 blis_gemm_test.o -g -O3 $(BLIS_LIB) -o test/blis_gemm -lm -fopenmp
+	gcc -std=c99 blis_gemm_test.o -g $(BLIS_LIB) -o test/blis_gemm -lm -fopenmp
 
 clean:
 	rm strassen*.o

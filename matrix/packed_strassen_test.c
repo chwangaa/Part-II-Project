@@ -1,13 +1,21 @@
-#ifndef MATRIX_UTIL_H
-#define MATRIX_UTIL_H
-
-#include <assert.h>
-#include "../setting.h"
-#include <stdbool.h>
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <sys/time.h>
+#include <string.h>
+#include "StrassenMatrixMultiplication.h"
+// #include "src/matrix_util.h"
+#include "util.h"
+#include "setting.h"
+const unsigned int M_default = 16;
+const unsigned int N_default = 16;
+const unsigned int K_default = 16;
+const unsigned int spacingFactor = 1;
 
-static inline void *malloc_aligned(size_t alignment, size_t bytes)
+void *malloc_aligned4(size_t alignment, size_t bytes)
 {
     // we need to allocate enough storage for the requested bytes, some 
     // book-keeping (to store the location returned by malloc) and some extra
@@ -42,7 +50,7 @@ static inline void *malloc_aligned(size_t alignment, size_t bytes)
     return data;
 }
 
-static inline void free_aligned(void *raw_data)
+void free_aligned4(void *raw_data)
 {
     if (raw_data)
     {
@@ -60,162 +68,6 @@ static inline void free_aligned(void *raw_data)
         free(data);
     }
 }
-
-void matrix_addition(
-    const unsigned int M,
-    const unsigned int N,
-    const Dtype *A, const int incRowA,
-    const Dtype *B, const int incRowB,
-    Dtype *C, const int incRowC){
-
-    Dtype* A_base;
-    Dtype* B_base;
-    Dtype* C_base;
-    for(int i = 0; i < M; i++){
-        for(int j = 0; j < N; j++){
-            C[i*incRowC+j] = A[i*incRowA+j] + B[i*incRowB+j];
-        }
-    }
-}
-
-void matrix_subtraction(
-    const unsigned int M,
-    const unsigned int N,
-    const Dtype *A, const int incRowA,
-    const Dtype *B, const int incRowB,
-    Dtype *C, const int incRowC){
-
-    for(int i = 0; i < M; i++){
-        for(int j = 0; j < N; j ++){
-            C[i*incRowC+j] = A[i*incRowA+j] - B[i*incRowB+j];
-        }
-    }
-}
-
-Dtype* make_matrix(const unsigned int M, const unsigned int N){
-    // fprintf(stderr, "calling make_matrix \n");
-    assert((sizeof(Dtype)*M*N) % 32 == 0);
-    // fprintf(stderr, "test passed \n");
-    Dtype* new_matrix = (Dtype*)malloc_aligned(32, sizeof(Dtype)*M*N);
-    assert(new_matrix);
-    return new_matrix;
-}
-
-Dtype* pad_matrix(Dtype* old_matrix, const unsigned int old_M, const unsigned int old_N,
-                  const unsigned int old_incRow,
-                  const unsigned int new_M,
-                  const unsigned int new_N){
-    assert(new_M >= old_M);
-    assert(new_N >= old_N);
-    Dtype* new_matrix = make_matrix(new_M, new_N);
-
-    for(int i = 0; i < new_M; i++){
-        for(int j = 0; j < new_N; j++){
-            new_matrix[i*new_N + j] = 0;
-        }
-    }
-
-    for(int i = 0; i < old_M; i++){
-        for(int j = 0; j < old_N; j++){
-            new_matrix[i*new_N + j] = old_matrix[i*old_incRow + j];
-        }
-    }
-
-    return new_matrix;
-}
-
-
-inline void remove_matrix(Dtype* old_matrix){
-    free_aligned(old_matrix);
-}
-
-void print_matrix(Dtype* matrix, int M, int N, int incRow){
-    for(int i = 0; i < M; i++){
-        for(int j = 0; j < N; j++){
-            fprintf(stderr, "%f ", matrix[i*incRow+j]);
-        }
-        fprintf(stderr, "\n");
-    }
-}
-
-void matrix_copyTo(
-    Dtype* const from_matrix, int M, int N, int incRowFrom,
-    Dtype* to_matrix, int M_to, int N_to, int incRowTo){
-
-    assert(M_to <= M);
-    assert(N_to <= N);
-    for(int i = 0; i < M_to; i++){
-        memcpy(&to_matrix[i*incRowTo], &from_matrix[i*incRowFrom], sizeof(Dtype)*N_to);         
-    }
-}
-
-Dtype* matrix_copy(
-    Dtype* const from_matrix, int M, int N, int incRowFrom){
-
-    Dtype* new_matrix = make_matrix(M, N);
-    for(int i = 0; i < M; i++){
-        // for(int j = 0; j < N_to; j++){
-        //  to_matrix[i*incRowTo+j] = from_matrix[i*incRowFrom+j];
-        // }
-        memcpy(&new_matrix[i*N], &from_matrix[i*incRowFrom], sizeof(Dtype)*N);
-    }
-    return new_matrix;
-}
-
-void matrix_partial_addition(Dtype* result, int rM, int rN, int rincRow,
-                             const Dtype* adder,  int aM, int aN, int aincRow){
-    debug_assert(aM <= rM);
-    debug_assert(aN <= rN);
-    for(int i = 0; i < aM; i++){
-        // Dtype* r = &result[i*rincRow];
-        // Dtype* a = &adder[i*aincRow];
-        for(int j = 0; j < aN; j++){
-            result[i*rincRow + j] += adder[i*aincRow + j];
-            //*r += *a;
-            //r++;
-            //a++;
-        }
-    }
-}
-
-void matrix_partial_subtraction(Dtype* result, int rM, int rN, int rincRow,
-                             const Dtype* adder,  int aM, int aN, int aincRow){
-    debug_assert(aM <= rM);
-    debug_assert(aN <= rN);
-    for(int i = 0; i < aM; i++){
-        for(int j = 0; j < aN; j++){
-            result[i*rincRow + j] -= adder[i*aincRow + j];
-        }
-    }
-}
-
-Dtype* addDifferentSizedMatrix(
-    Dtype* const Larger, int lm, int ln, int incRowL,
-    Dtype* const Smaller, int sm, int sn, int incRowS){
-
-    Dtype* new_matrix = matrix_copy(Larger, lm, ln, incRowL);
-    matrix_partial_addition(new_matrix, lm, ln, ln,
-                            Smaller, sm, sn, incRowS);
-    return new_matrix;
-}
-
-Dtype* subtractDifferentSizedMatrix(
-    Dtype* const Larger, int lm, int ln, int incRowL,
-    Dtype* Smaller, int sm, int sn, int incRowS){
-
-    Dtype* new_matrix = matrix_copy(Larger, lm, ln, incRowL);
-    assert(new_matrix);
-    // for(int i = 0; i < 16; i++){
-    //     for(int j = 0; j < 16; j++){
-    //         fprintf(stderr, "%d ", (int)Smaller[16*i+j]);
-    //     }
-    //     fprintf(stderr, "\n");
-    // }
-    matrix_partial_subtraction(new_matrix, lm, ln, ln,
-                            Smaller, sm, sn, incRowS);
-    return new_matrix;
-}
-
 
 static void
 pack_A_unit_strip(int k, const Dtype *A, int incRowA, int incColA,
@@ -311,7 +163,7 @@ pack_B_strip(int kc, int nc, const Dtype *B, int incRowB, int incColB,
     // }
 }
 
-void MakePackedA(Dtype* A, int M, int K, int incRowA,
+static inline void MakePackedA(Dtype* A, int M, int K, int incRowA,
             int M_target, int K_target, 
             Dtype* newA){
 
@@ -362,7 +214,7 @@ void MakePackedA(Dtype* A, int M, int K, int incRowA,
     MakePackedA(A_2_2, m2, k2, incRowA, M_target, K_target, newA_2_2);
 }
 
-void MakePackedB(Dtype* B, int K, int N, int incRowB,
+static inline void MakePackedB(Dtype* B, int K, int N, int incRowB,
             int K_target, int N_target, 
             Dtype* newB){
 
@@ -399,4 +251,129 @@ void MakePackedB(Dtype* B, int K, int N, int incRowB,
 }
 
 
-#endif
+static int calculateMTarget(int M, int N, int K){
+    while(M % 16 == 0 && N % 16 == 0 && K > limit_K && N > limit_N && M > limit_M){
+        M /= 2;
+        N /= 2;
+        K /= 2;
+    }
+    return M;
+}
+
+static int calculateKTarget(int M, int N, int K){
+    while(M % 16 == 0 && N % 16 == 0 && K > limit_K && N > limit_N && M > limit_M){
+        M /= 2;
+        N /= 2;
+        K /= 2;
+    }
+    return K;
+}
+
+static int calculateNTarget(int M, int N, int K){
+    while(M % 16 == 0 && N % 16 == 0 && K > limit_K && N > limit_N && M > limit_M){
+        M /= 2;
+        N /= 2;
+        K /= 2;
+    }
+    return N;
+}
+
+int main(int argc, char** argv) {
+  int M, N, K;
+  if (argc < 4) {
+    fprintf(stderr, "M, N, K not given, use the default values\n");
+    M = M_default;
+    N = N_default;
+    K = K_default;
+  }
+  else{
+    M = atoi(argv[1]);
+    N = atoi(argv[2]);
+    K = atoi(argv[3]);
+  }
+    int incRowA = K * spacingFactor;
+    int incRowB = N * spacingFactor;
+    int incRowC = N * spacingFactor;
+
+	Dtype* A = (Dtype*)malloc_aligned4(32, sizeof(Dtype)*M*incRowA);
+	Dtype* B = (Dtype*)malloc_aligned4(32, sizeof(Dtype)*K*incRowB);
+	Dtype* C = (Dtype*)malloc_aligned4(32, sizeof(Dtype)*M*incRowC);
+    assert(A);
+    assert(B);
+    assert(C);
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < K; j++){
+            A[i*incRowA+j] = i;
+        }
+    }
+    
+    for(int i = 0; i < K; i++){
+        for(int j = 0; j < N; j++){
+            B[i*incRowB+j] = 1;
+        }
+    }
+
+    
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < N; j++){
+            C[i*incRowC+j] = 0;
+        }
+    }
+
+
+    // float temp[9] = {2, 2, 1, 2, 2, 1, 1, 1, 1};
+    // float temp1[2] = {2,1};
+    // float temp2[4] = {2, 2, 2, 2};
+    // A = temp1;
+    // B = temp2;
+    Dtype* newA = (Dtype*)malloc_aligned4(32, sizeof(Dtype)*M*K);
+    Dtype* newB = (Dtype*)malloc_aligned4(32, sizeof(Dtype)*K*N);
+    
+    int Mtarget = calculateMTarget(M, N, K);
+    int Ktarget = calculateKTarget(M, N, K);
+    int Ntarget = calculateNTarget(M, N, K);
+    fprintf(stderr, "the targets are %d %d %d \n", Mtarget, Ntarget, Ktarget);
+    MakePackedA(A, M, K, incRowA, 
+                Mtarget, Ktarget,
+                newA);
+    MakePackedB(B, K, N, incRowB,
+                Ktarget, Ntarget,
+                newB);
+    // free(A);
+    // for(int i = 0; i < 16; i++){
+    //     for(int j = 0; j < 16; j++){
+    //         fprintf(stderr, "%d ", (int)newA[i*16+j]);
+    //     }
+    //     fprintf(stderr, "\n");
+    // }
+
+    uint64_t start_time = timestamp_us();
+    strassen_matrix_multiplication(
+            M, N, K,
+            newA, incRowA,
+            newB, incRowB,
+            C, incRowC);
+
+    uint64_t end_time = timestamp_us();
+    double m_second_taken = (double)(end_time - start_time) / 1000.0;
+    int error = 0;
+    for(int i = 0; i < M; i++){
+    // 	// fprintf(stderr, "%d \n", fix16_to_int(M3[i]));
+    	for(int j = 0; j < N; j++){
+            if(C[i*incRowC+j] != K*i){
+                error++;
+                // fprintf(stderr, "%d ", (int)C[i*incRowC+j]);
+
+                // fprintf(stderr, "%d %d %f \n", i, j, C[i*incRowC+j]);
+            }
+    		    // fprintf(stderr, "%d ", (int)C[i*incRowC+j]);
+            }
+        // fprintf(stderr, "\n");
+    }
+    free_aligned4(newA);
+    free_aligned4(newB);
+    printf("%d, %d, %d, %d, %f \n", M, N, K, error, m_second_taken);
+   // free(A);
+    // free(B);
+    // free(C);
+}

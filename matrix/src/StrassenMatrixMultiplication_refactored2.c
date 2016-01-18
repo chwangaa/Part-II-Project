@@ -9,7 +9,6 @@
 */
 
 #include "strassen_util.h"
-#include "matrix_arithmetic.h"
 
 void strassen_matrix_multiplication_worker(
     const unsigned int m,
