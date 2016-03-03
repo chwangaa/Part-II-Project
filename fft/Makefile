@@ -1,4 +1,4 @@
-FFT_INC = -I$(HOME)/Documents/Project/fft/include
+FFT_INC = -I$(HOME)/Cambridge/Part-II-Project/fft/include
 LIB = -lm
 
 TEST_CC = gcc -std=c99 $(FFT_INC) -O3 $^ -o $@ -lm
