@@ -130,7 +130,7 @@ void remove_matrix(Dtype* old_matrix){
 void print_matrix(Dtype* matrix, int M, int N, int incRow){
     for(int i = 0; i < M; i++){
         for(int j = 0; j < N; j++){
-            fprintf(stderr, "%f ", matrix[i*incRow+j]);
+            fprintf(stderr, "%.1f ", matrix[i*incRow+j]);
         }
         fprintf(stderr, "\n");
     }
@@ -206,8 +206,10 @@ pack_A_unit_strip(int k, const Dtype *A, int incRowA, int incColA,
 {
     int i, j;
 
+
     for (j=0; j<k; ++j) {
         for (i=0; i<MR; ++i) {
+            // fprintf(stderr, "assigning %f to %f \n", buffer[i], A[i*incRowA]);
             buffer[i] = A[i*incRowA];
         }
         buffer += MR;
@@ -283,12 +285,15 @@ void MakePackedA(Dtype* A, int M, int K, int incRowA,
             // fprintf(stderr, "kb is %d, k is %d \n ", kb, k);
             int _mc = M % MC;
             int _kc = K % KC;
+            // fprintf(stderr, "K is %d, KC is %d \n", K, KC);
+            // fprintf(stderr, "_mc is %d, _kc is %d \n", _mc, _kc);
 
             for (int l=0; l<kb; ++l) {
                 int kc    = (l!=kb-1 || _kc==0) ? KC   : _kc;
 
                 for (int i=0; i<mb; ++i) {
                     int mc = (i!=mb-1 || _mc==0) ? MC : _mc;
+                    // fprintf(stderr, "pack a strip of size %d %d \n", mc, kc);
                     pack_A_strip(mc, kc, &A[i*MC*incRowA+l*KC], incRowA, 1, newA);
                     newA += mc * kc;
             }

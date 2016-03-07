@@ -22,14 +22,36 @@ void single_test(int M, int N, int K, int ALGORITHM){
     Dtype* B = create_matrix(K, N, incRowB, 1);
     Dtype* C = create_matrix(M, N, incRowC, 0);
 
-    if(ALGORITHM == 0){
+    switch(ALGORITHM){
+        case 0:
         blis_mm(
             M, N, K,
             A, incRowA,
             B, incRowB,
             C, incRowC);
-    }
-    else{
+        break;
+        case 1:
+        cblas_mm(
+            M, N, K,
+            A, incRowA,
+            B, incRowB,
+            C, incRowC);
+        break;
+        case 2:
+        packed_mm(
+            M, N, K,
+            A, incRowA,
+            B, incRowB,
+            C, incRowC);
+        break;
+        case 3:
+        packed_strassen_mm(
+            M, N, K,
+            A, incRowA,
+            B, incRowB,
+            C, incRowC);
+        break;
+        default:
         strassen_mm(
             M, N, K,
             A, incRowA,
@@ -45,10 +67,20 @@ void benchmark_mm(int M, int N, int K, int n, int ALGO){
     }
     uint64_t end_time = timestamp_us();
     double dt = (double)(end_time-start_time) / (1000.0*n);
-    if(ALGO == 0){
+    switch(ALGO){
+        case 0:
         fprintf(stderr, "BLIS takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
-    }
-    else{
+        break;
+        case 1:
+        fprintf(stderr, "CBLAS takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
+        break;
+        case 2:
+        fprintf(stderr, "PACKED takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
+        break;
+        case 3:
+        fprintf(stderr, "PACKED_STRASSEN takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
+        break;
+        default:
         fprintf(stderr, "STRASSEN takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
     }
 }

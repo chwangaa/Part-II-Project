@@ -9,6 +9,7 @@ void blis_mm(
      	const Dtype *B, const int incRowB,
      	Dtype *C, const int incRowC){
     
+    
 	    float alpha = 1;
 	    float beta = 0;
 	    float* alpha_ptr = &alpha;

@@ -10,10 +10,14 @@ the options are:
     strassen_mm
     SimpleMatrixMultiplication
 */
-#define matrix_multiplication strassen_mm
-#define matrix_multiplication_base_case blis_mm
 
-#define DEBUG 1
+
+#define matrix_multiplication strassen_mm
+#define matrix_multiplication_base_case blas_mm
+#define packed_strassen_base_matrix_multiplication packed_mm
+#define blas_mm blis_mm
+
+#define DEBUG 0
 #include "matrix_util.h"
 
 /*
