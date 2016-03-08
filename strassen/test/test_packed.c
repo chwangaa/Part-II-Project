@@ -150,8 +150,9 @@ int test3(){
 
 int test4(){
     int M, N, K, incRowA, incRowB, incRowC;
-    M = N = 16;
-    K = 16;
+    M = 512;
+    K = 4608;
+    N = 784;
     incRowA = K;
     incRowB = incRowC = N;
 
@@ -162,13 +163,13 @@ int test4(){
 
     for(int i = 0; i < M; i++){
         for(int j = 0; j < K; j++){
-            A[i*incRowA+j] = i;
+            A[i*incRowA+j] = (float)i/1000000;
         }
     }
 
     for(int i = 0; i < M; i++){
         for(int j = 0; j < K; j++){
-            B[i*incRowA+j] = j;
+            B[i*incRowA+j] = (float)j/1000000;
         }
     }
 
@@ -187,9 +188,9 @@ int test4(){
     int error = 0;
     for(int i = 0; i < M; i++){
         for(int j = 0; j < N; j++){
-            if(C[i*incRowC+j] != K*i*j){
+            if(abs(C[i*incRowC+j] - (float)K*i*j/1000000000000) > 5){
                 error++;
-                fprintf(stderr, " %.0f", i, j, C[i*incRowC+j]);
+                fprintf(stderr, "%d %d %f %f\n", i, j, C[i*incRowC+j], (float)K*i*j/10000);
             }
             }
     }
@@ -198,7 +199,7 @@ int test4(){
         fprintf(stderr, "test4 PASSES\n");
     }
     else{
-        fprintf(stderr, "test4   FAILS\n");
+        fprintf(stderr, "test4   FAILS with %d error \n", error);
     }
     return error;
 }

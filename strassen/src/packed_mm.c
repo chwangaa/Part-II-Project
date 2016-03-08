@@ -52,8 +52,9 @@ dgemm_macro_kernel(int     mc,
                     B_r,
                     beta_ptr,
                     C_r, 
-                    incRowC, 
+                    // incRowC, 
                     1,
+                    incRowC,
                     0);
 
             }

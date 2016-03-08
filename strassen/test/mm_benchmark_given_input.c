@@ -20,6 +20,6 @@ int main(int argc, char** argv) {
     ALGO = atoi(argv[4]);
   }
 
-  int NUM_REPEAT = 1;
+  int NUM_REPEAT = 3;
   benchmark_mm(M, N, K, NUM_REPEAT, ALGO);
 }

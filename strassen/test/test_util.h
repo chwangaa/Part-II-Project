@@ -62,25 +62,27 @@ void single_test(int M, int N, int K, int ALGORITHM){
 
 void benchmark_mm(int M, int N, int K, int n, int ALGO){
     uint64_t start_time = timestamp_us();
+    uint64_t clk_start = clock();
     for(int i = 0; i < n; i++){
         single_test(M, N, K, ALGO);
     }
+    double clk = (double)(clock() - clk) / n;
     uint64_t end_time = timestamp_us();
     double dt = (double)(end_time-start_time) / (1000.0*n);
     switch(ALGO){
         case 0:
-        fprintf(stderr, "BLIS takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
+        fprintf(stderr, "BLIS takes %lf ms and %lf to complete %dx%dx%d\n", dt, clk, M, N, K);
         break;
         case 1:
-        fprintf(stderr, "CBLAS takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
+        fprintf(stderr, "CBLAS takes %lf ms and %lf to complete %dx%dx%d\n", dt, clk, M, N, K);
         break;
         case 2:
-        fprintf(stderr, "PACKED takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
+        fprintf(stderr, "PACKED takes %lf ms and %lf to complete %dx%dx%d\n", dt, clk, M, N, K);
         break;
         case 3:
-        fprintf(stderr, "PACKED_STRASSEN takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
+        fprintf(stderr, "PACKED_STRASSEN takes %lf ms and %lf to complete %dx%dx%d\n", dt, clk, M, N, K);
         break;
         default:
-        fprintf(stderr, "STRASSEN takes %lf ms to complete %dx%dx%d\n", dt, M, N, K);
+        fprintf(stderr, "STRASSEN takes %lf ms and %lf to complete %dx%dx%d\n", dt, clk, M, N, K);
     }
 }
