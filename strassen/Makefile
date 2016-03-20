@@ -54,3 +54,7 @@ benchmark: strassen test/mm_performance_benchmark.c
 
 benchmark_input: strassen test/mm_benchmark_given_input.c
 	gcc -g -w -std=c99 $(STRASSEN_INC) -I$(BLIS_INC) -O3 -o build/benchmark test/mm_benchmark_given_input.c include/strassen.a $(BLIS_LIB) -lm -lcblas -fopenmp
+
+
+benchmark_addition: strassen test/madd_benchmark_given_input.c
+	gcc -g -w -std=c99 $(STRASSEN_INC) -I$(BLIS_INC) -O3 -o build/benchmark_add test/madd_benchmark_given_input.c include/strassen.a $(BLIS_LIB) -lm -lcblas -fopenmp

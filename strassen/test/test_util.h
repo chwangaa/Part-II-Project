@@ -60,6 +60,24 @@ void single_test(int M, int N, int K, int ALGORITHM){
     }
 }
 
+double benchmark_matrix_addition(int M, int N, int repeat){
+    Dtype* A = create_matrix(M, N, N, 1);
+    Dtype* B = create_matrix(M, N, N, 1);
+    Dtype* C = create_matrix(M, N, N, 1);
+
+    uint64_t start_time = timestamp_us();
+
+    for(int i = 0; i < repeat; i++){
+        matrix_addition(M, N,
+                        A, N,
+                        B, N,
+                        C, N);
+    }
+    uint64_t end_time = timestamp_us();
+    double dt = (double)(end_time-start_time) / (1000.0*repeat);   
+    return dt;
+}
+
 void benchmark_mm(int M, int N, int K, int n, int ALGO){
     uint64_t start_time = timestamp_us();
     uint64_t clk_start = clock();

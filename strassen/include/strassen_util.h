@@ -2,13 +2,13 @@
 #define STRASSEN_UTIL_H
 #include "matrix.h"
 
-#define limit_X 256
-#define limit_M 256
-#define limit_N 256
-#define limit_K 256
+#define limit_X 128
+#define limit_M 128
+#define limit_N 128
+#define limit_K 128
 
-#define MC 64
-#define KC 384
+#define MC 128
+#define KC 256
 #define NC 4096
 #define MR 8
 #define NR 8

@@ -1,5 +1,6 @@
 #include "strassen_util.h"
-
+#include <emmintrin.h>
+#include <immintrin.h>
 
 // M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
 static Dtype* strassen_make_M1_submatrix(    
@@ -8,50 +9,29 @@ static Dtype* strassen_make_M1_submatrix(
     Dtype const *B_1_1, const int b11m, const int b11n, const int incRowB_1_1,
     Dtype const *B_2_2, const int b22m, const int b22n, const int incRowB_2_2){
 
-    /*
-    construct M1 by the formula
-    M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
-    */
-    // T1 = (A_1_1 + A_2_2)
-    // Dtype* T1 = make_matrix(a11m, a11n);
-    // // T1 = A_1_1
-    // matrix_copyTo(A_1_1, a11m, a11n, incRowA_1_1,
-    //               T1, a11m, a11n, a11n);
 
-    // // T1 += A_2_2
-    // matrix_partial_addition(
-    //     T1, a11m, a11n, a11n,
-    //     A_2_2, a22m, a22n, incRowA_2_2
-    //     );
-    Dtype* T1 = addDifferentSizedMatrix(A_1_1, a11m, a11n, incRowA_1_1,
-                                        A_2_2, a22m, a22n, incRowA_2_2);
-    // print_matrix(A_1_1, a11m, a11n, a11n);
-    // T2 = (B_1_1 + B_2_2)
+    int M = a11m;
+    int K = a11n;
+    int N = b11n;
+    Dtype* T1 = make_matrix(M, K);
+    matrix_addition(M, K,
+                    A_1_1, incRowA_1_1,
+                    A_2_2, incRowA_2_2,
+                    T1, K);
 
-    // T2 = B_1_1
-    // Dtype* T2 = make_matrix(b11m, b11n);
-
-    // matrix_copyTo(B_1_1, b11m, b11n, incRowB_1_1,
-    //               T2, b11m, b11n, b11n);
-    // // T2 += B_2_2
-    // matrix_partial_addition(
-    //     T2, b11m, b11n, b11n,
-    //     B_2_2, b22m, b22n, incRowB_2_2
-    //     );
-    Dtype* T2 = addDifferentSizedMatrix(B_1_1, b11m, b11n, incRowB_1_1,
-                                        B_2_2, b22m, b22n, incRowB_2_2);
-    // M1 = T1 * T2
-    int m = a11m;
-    int n = b11n;
-    int k = a11n;
-    Dtype* M1 = make_matrix(m, n);
+    Dtype* T2 = make_matrix(K, N);
+    matrix_addition(K, N,
+                    B_1_1, incRowB_1_1,
+                    B_2_2, incRowB_2_2,
+                    T2, N);    
+    // M6 = T1 * T2  
+    Dtype* M1 = make_matrix(M, N);
     packed_strassen_mm(
-        m, n, k,
-        T1, k,
-        T2, n,
-        M1, n);
-    remove_matrix(T1);
-    remove_matrix(T2);
+        M, N, K,
+        T1, K,
+        T2, N,
+        M1, N);
+
     return M1;
 }
 
@@ -66,34 +46,29 @@ static Dtype* strassen_make_M2_submatrix(
     debug_assert(a21n == b11m);
     debug_assert(a21n >= a22n);
 
-    int m2 = a21m;
-    int k1 = a21n;
-    int n1 = b11n;
+    int M = a21m;
+    int K = a21n;
+    int N = b11n;
     /*
     construct M2 by the formula
     M2 = (A_2_1 + A_2_2) * B_1_1
     */
     // T1 = A_2_1 + A_2_2
-    /*
-    Dtype* T1 = make_matrix(m2, k1);
-    // T1 = A_2_1
-    matrix_copyTo(A_2_1, m2, k1, incRowA_2_1,
-                  T1, m2, k1, k1);
-    // T1 += A_2_2
-    matrix_partial_addition(
-        T1, m2, k1, k1,
-        A_2_2, a22m, a22n, incRowA_2_2
-        );
-    */
-    Dtype* T1 = addDifferentSizedMatrix(A_2_1, m2, k1, incRowA_2_1,
-                                        A_2_2, a22m, a22n, incRowA_2_2);
-    // print_matrix(B_1_1, m2, n1, n1);
-    Dtype* M2 = make_matrix(m2, n1);
+    // Dtype* T1 = addDifferentSizedMatrix(A_2_1, m2, k1, incRowA_2_1,
+    //                                     A_2_2, a22m, a22n, incRowA_2_2);
+    Dtype* T1 = make_matrix(M, K);
+    matrix_addition(M, K,
+                    A_2_1, incRowA_2_1,
+                    A_2_2, incRowA_2_2,
+                    T1, K);
+
+    Dtype* M2 = make_matrix(M, N);
     packed_strassen_mm(
-        m2, n1, k1,
-        T1, k1,
+        M, N, K,
+        T1, K,
         B_1_1, incRowB_1_1,
-        M2, n1);
+        M2, N);
+
     remove_matrix(T1);
     return M2;
 }
@@ -201,22 +176,31 @@ static Dtype* strassen_make_M6_submatrix(
     debug_assert(b11m == b12m);
     debug_assert(b11n >= b12n);
     debug_assert(a11n == b11m);
-    const int m1 = a11m;
-    const int k1 = a11n;
-    const int n1 = b11n;
 
-    Dtype* T1 = subtractDifferentSizedMatrix(A_1_1, a11m, a11n, incRowA_1_1,
-                                             A_2_1, a21m, a21n, incRowA_2_1);
-    Dtype* T2 = addDifferentSizedMatrix(B_1_1, b11m, b11n, incRowB_1_1,
-                                        B_1_2, b12m, b12n, incRowB_1_2);
+    int M = a11m;
+    int K = a11n;
+    int N = b11n;
 
+    Dtype* T1 = make_matrix(M, K);
+    matrix_subtraction(M, K,
+                        A_1_1, incRowA_1_1,
+                        A_2_1, incRowA_2_1,
+                        T1, K);
+    // Dtype* T2 = addDifferentSizedMatrix(B_1_1, b11m, b11n, incRowB_1_1,
+    //                                     B_1_2, b12m, b12n, incRowB_1_2);
+    Dtype* T2 = make_matrix(K, N);
+    matrix_addition(K, N,
+                    B_1_1, incRowB_1_1,
+                    B_1_2, incRowB_1_2,
+                    T2, N);    
     // M6 = T1 * T2
-    Dtype* M6 = make_matrix(m1, n1);
+    Dtype* M6 = make_matrix(M, N);
     packed_strassen_mm(
-        m1, n1, k1,
-        T1, k1,
-        T2, n1,
-        M6, n1);
+        M, N, K,
+        T1, K,
+        T2, N,
+        M6, N);
+
 
     remove_matrix(T1);
     remove_matrix(T2);
@@ -224,12 +208,11 @@ static Dtype* strassen_make_M6_submatrix(
 }
 
 // M7 = (A_1_2 - A_2_2) * (B_2_1 + B_2_2)
-static void strassen_make_M7_submatrix(
+static Dtype* strassen_make_M7_submatrix(
     Dtype const *A_1_2, int a12m, int a12n, const int incRowA_1_2,
     Dtype const *A_2_2, int a22m, int a22n, const int incRowA_2_2,
     Dtype const *B_2_1, int b21m, int b21n, const int incRowB_2_1,
-    Dtype const *B_2_2, int b22m, int b22n, const int incRowB_2_2,
-    Dtype* result, int incRowResult){
+    Dtype const *B_2_2, int b22m, int b22n, const int incRowB_2_2){
 
 
     // sanity check
@@ -239,23 +222,170 @@ static void strassen_make_M7_submatrix(
     debug_assert(b21n >= b22n);
     debug_assert(a12n == b21m);
     
-    int m1 = a12m;
-    int n1 = b21n;
-    int k2 = a12n;
-    Dtype* T1 = subtractDifferentSizedMatrix(A_1_2, a12m, a12n, incRowA_1_2,
-                                             A_2_2, a22m, a22n, incRowA_2_2);    
-    Dtype* T2 = addDifferentSizedMatrix(B_2_1, b21m, b21n, incRowB_2_1,
-                                        B_2_2, b22m, b22n, incRowB_2_2);
-    // M7 = T1 * T2
-    // Dtype* M7 = make_matrix(m1, n1);
-    packed_strassen_mm(
-        m1, n1, k2,
-        T1, k2,
-        T2, n1,
-        result, incRowResult);
+    int M = a12m;
+    int N = b21n;
+    int K = a12n;
 
+    Dtype* T1 = make_matrix(M, K);
+    matrix_subtraction(M, K,
+                    A_1_2, incRowA_1_2,
+                    A_2_2, incRowA_2_2,
+                    T1, K);
+
+    Dtype* T2 = make_matrix(K, N);
+    matrix_addition(K, N,
+                    B_2_1, incRowB_2_1,
+                    B_2_2, incRowB_2_2,
+                    T2, N);
+
+    Dtype* M7 = make_matrix(M, N);
+    packed_strassen_mm(
+        M, N, K,
+        T1, K,
+        T2, N,
+        M7, N);
     remove_matrix(T1);
     remove_matrix(T2);
+    return M7;
+}
+
+//  C_1_1 = M1 - M4 - M5 + M7
+static void strassen_calculate_C_1_1(
+    Dtype* const M1, int m1m, int m1n,
+    Dtype* const M4, int m4m, int m4n,
+    Dtype* const M5, int m5m, int m5n,
+    Dtype* const M7, int m7m, int m7n,
+    Dtype* C_1_1,    int M,   int N,
+    int incRowC_1_1
+    ){
+    // C_1_1 = M1 - M4 - M5 + M7
+    /*
+    // C_1_1 = M1
+    matrix_addition(m1m, m1n,
+                  M1, m1n,
+                  M7, m7n,
+                  C_1_1, incRowC_1_1);
+    // C_1_1 -= M4
+    matrix_partial_subtraction(C_1_1, M, N, incRowC_1_1,
+                  M4, m4m, m4n, m4n);
+    // C_1_1 -= M5
+    matrix_partial_subtraction(C_1_1, M, N, incRowC_1_1,
+                  M5, m5m, m5n, m5n);
+    */
+    debug_assert(m1n == m4n);
+    debug_assert(m5n == m7n);
+    debug_assert(m4n == m7n);
+    debug_assert(m7n == N);
+    for(int i = 0; i < M; i += 1){
+        Dtype* R1 = M1;
+        Dtype* R2 = M4;
+        Dtype* R3 = M5;
+        Dtype* R4 = M7;
+        for(int j = 0; j < N; j+= 8){
+            __m256 r1 = _mm256_load_ps(R1+j);
+            __m256 r2 = _mm256_load_ps(R2+j);
+            __m256 r3 = _mm256_load_ps(R3+j);
+            __m256 r4 = _mm256_load_ps(R4+j);
+            __m256 temp = r1 - r2 - r3 + r4;         
+            _mm256_store_ps(C_1_1+j, temp);
+        }
+        R1 += N;
+        R2 += N;
+        R3 += N;
+        R4 += N;
+        C_1_1 += incRowC_1_1;
+    }
+}
+
+// C_1_2 = M3 + M5
+static void strassen_calculate_C_1_2(
+    Dtype* const M3, int m3m, int m3n, 
+    Dtype* const M5, int m5m, int m5n,
+    Dtype* C_1_2, int M, int N,
+    int incRowC_1_2
+    ){
+
+    debug_assert(m3m == m5m);
+    debug_assert(m3n == m5n);
+    debug_assert(m3m == M);
+    debug_assert(m3n == N);
+    
+    matrix_addition(M, N,
+            M3, m3n,
+            M5, m5n,
+            C_1_2, incRowC_1_2);
+
+}
+
+// C_2_1 = M2 - M4
+static void strassen_calculate_C_2_1(
+    Dtype* const M2, int m2m, int m2n,
+    Dtype* const M4, int m4m, int m4n,
+    Dtype* C_2_1, int M, int N,
+    int incRowC_2_1
+    ){
+
+    debug_assert(m2m == m4m);
+    debug_assert(m2m == M);
+    debug_assert(m2n == m4n);
+    debug_assert(m2n == N);
+
+    matrix_subtraction(M, N,
+        M2, m2n,
+        M4, m4n,
+        C_2_1, incRowC_2_1);
+}
+
+//  C_2_2 = M1 - M2 + M3 - M6
+static void strassen_calculate_C_2_2(
+    Dtype* const M1, int m1m, int m1n,
+    Dtype* const M2, int m2m, int m2n,
+    Dtype* const M3, int m3m, int m3n,
+    Dtype* const M6, int m6m, int m6n,
+    Dtype* C_2_2,    int M,   int N,
+    int incRowC_2_2
+    ){
+    /*
+    const int m2 = m2m;
+    const int n2 = m3n;
+
+    // C_2_2 = M1 - M2
+    matrix_subtraction(m2, n2,
+            M1, m1n,
+            M2, m2n,
+            C_2_2, incRowC_2_2);
+    
+    // M1 += M3
+    matrix_partial_addition(C_2_2, m2, n2, incRowC_2_2,
+                  M3, m2, n2, m3n);
+    
+    // M1 -= M6
+    matrix_partial_subtraction(C_2_2, m2, n2, incRowC_2_2,
+                  M6, m2, n2, m6n);
+    */
+    debug_assert(m1n == m2n);
+    debug_assert(m3n == m6n);
+    debug_assert(m2n == m6n);
+    debug_assert(m6n == N);
+    for(int i = 0; i < M; i += 1){
+        Dtype* R1 = M1;
+        Dtype* R2 = M2;
+        Dtype* R3 = M3;
+        Dtype* R4 = M6;
+        for(int j = 0; j < N; j+= 8){
+            __m256 r1 = _mm256_load_ps(R1+j);
+            __m256 r2 = _mm256_load_ps(R2+j);
+            __m256 r3 = _mm256_load_ps(R3+j);
+            __m256 r4 = _mm256_load_ps(R4+j);
+            __m256 temp = r1 - r2 + r3 - r4;         
+            _mm256_store_ps(C_2_2+j, temp);
+        }
+        R1 += N;
+        R2 += N;
+        R3 += N;
+        R4 += N;
+        C_2_2 += incRowC_2_2;
+    }
 }
 
 
@@ -273,13 +403,12 @@ void packed_strassen_mm(
     debug_assert(m > 0);
     debug_assert(n > 0);
     debug_assert(k > 0);
-    
     /* check if the base case has reached
        the base condition is defined as when all the dimensions are smaller than 256
     */
     // fprintf(stderr, "multiplying dimension m(%d), n(%d), k(%d) \n", m, n, k);
 
-    if(baseConditionReached(m, n, k)){
+    if(baseConditionReached(m, n, k) || m % 8 != 0 || n % 8 != 0 || k % 8 != 0){
         packed_strassen_base_matrix_multiplication(
             m, n, k,
             A, incRowA,
@@ -334,57 +463,15 @@ void packed_strassen_mm(
 
 
     /*
-    construct M7 by the formula
-    M7 = (A_1_2 - A_2_2) * (B_2_1 + B_2_2)
-    */
-    strassen_make_M7_submatrix(
-            A_1_2, m1, k2, k2,
-            A_2_2, m2, k2, k2,
-            B_2_1, k2, n1, n1,
-            B_2_2, k2, n2, n2,
-            C_1_1, incRowC);
-    
-    /*
     construct M1 by the formula
     M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
-    */    
+    */
     Dtype* M1 = strassen_make_M1_submatrix(    
             A_1_1, m1, k1, k1,
             A_2_2, m2, k2, k2,
             B_1_1, k1, n1, n1,
             B_2_2, k2, n2, n2);
-    matrix_partial_addition(C_1_1, m1, n1, incRowC,
-                  M1, m1, n1, n1);
-    matrix_copyTo(M1, m1, n1, n1,
-                  C_2_2, m2, n2, incRowC);
-    remove_matrix(M1);
-    /*
-    construct M2 by the formula
-    M2 = (A_2_1 + A_2_2) * B_1_1
-    */
-    Dtype* M2 = strassen_make_M2_submatrix(
-            A_2_1, m2, k1, k1,
-            A_2_2, m2, k2, k2,
-            B_1_1, k1, n1, n1);    
-
-    matrix_copyTo(M2, m2, n1, n1,
-                  C_2_1, m2, n1, incRowC);
-    matrix_partial_subtraction(C_2_2, m2, n2, incRowC,
-                  M2, m2, n2, n1);
-    remove_matrix(M2);
-    /*
-    construct M3 by the formula
-    M3 = A_1_1 * (B_1_2 - B_2_2)
-    */
-    Dtype* M3 = strassen_make_M3_submatrix(
-            A_1_1, m1, k1, k1,
-            B_1_2, k1, n2, n2,
-            B_2_2, k2, n2, n2);
-    matrix_copyTo(M3, m1, n2, n2,
-                  C_1_2, m1, n2, incRowC);
-    matrix_partial_addition(C_2_2, m2, n2, incRowC,
-                  M3, m2, n2, n2);
-    remove_matrix(M3);
+    
     /*
     construct M4 by the formula
     M4 = A_2_2 * (B_2_1 - B_1_1)
@@ -393,11 +480,6 @@ void packed_strassen_mm(
             A_2_2, m2, k2, k2,
             B_2_1, k2, n1, n1,
             B_1_1, k1, n1, n1);
-    matrix_partial_subtraction(C_1_1, m1, n1, incRowC,
-                  M4, m2, n1, n1);
-    matrix_partial_subtraction(C_2_1, m2, n1, incRowC,
-                  M4, m2, n1, n1);
-    remove_matrix(M4);    
     /*
     construct M5 by the formula
     M5 = (A_1_1 + A_1_2) * B_2_2
@@ -406,12 +488,63 @@ void packed_strassen_mm(
             A_1_1, m1, k1, k1,
             A_1_2, m1, k2, k2,
             B_2_2, k2, n2, n2);
-    matrix_partial_subtraction(C_1_1, m1, n1, incRowC,
-                  M5, m1, n2, n2);
-    matrix_partial_addition(C_1_2, m1, n2, incRowC,
-                  M5, m1, n2, n2);
-    remove_matrix(M5); 
     /*
+    construct M7 by the formula
+    M7 = (A_1_2 - A_2_2) * (B_2_1 + B_2_2)
+    */
+    Dtype* M7 = strassen_make_M7_submatrix(
+            A_1_2, m1, k2, k2,
+            A_2_2, m2, k2, k2,
+            B_2_1, k2, n1, n1,
+            B_2_2, k2, n2, n2);
+    /*!!!!!!!!!!!!!!!!!!!!!!!!!!
+    compute C_1_1 by the formula
+    C_1_1 = M1 + M4 - M5 + M7
+    */
+    strassen_calculate_C_1_1(
+        M1, m1, n1,
+        M4, m2, n1,
+        M5, m1, n2,
+        M7, m1, n1,
+        C_1_1, m1, n1, incRowC);
+
+    remove_matrix(M7);
+    /*
+    construct M2 by the formula
+    M2 = (A_2_1 + A_2_2) * B_1_1
+    */
+    Dtype* M2 = strassen_make_M2_submatrix(
+            A_2_1, m2, k1, k1,
+            A_2_2, m2, k2, k2,
+            B_1_1, k1, n1, n1);    
+    /*!!!!!!!!!!!!!!!!!!!!!!!!!!
+    compute C_2_1 by the formula
+    C_2_1 = M2 + M4
+    */
+    strassen_calculate_C_2_1(
+        M2, m2, n1,
+        M4, m2, n1,
+        C_2_1, m2, n1, incRowC);
+
+    remove_matrix(M4);
+    /*
+    construct M3 by the formula
+    M3 = A_1_1 * (B_1_2 - B_2_2)
+    */
+    Dtype* M3 = strassen_make_M3_submatrix(
+            A_1_1, m1, k1, k1,
+            B_1_2, k1, n2, n2,
+            B_2_2, k2, n2, n2);
+    /*!!!!!!!!!!!!!!!!!!!!!!!!!!
+    compute C_1_2 by the formula
+    C_1_2 = M3 + M5
+    */
+    strassen_calculate_C_1_2(
+        M3, m1, n2,
+        M5, m1, n2,
+        C_1_2, m1, n2, incRowC);
+    remove_matrix(M5);
+    /*  
     construct M6 by the formula
     M6 = (A_1_1 - A_2_1) * (B_1_1 + B_1_2)
     */
@@ -419,10 +552,27 @@ void packed_strassen_mm(
             A_2_1, m2, k1, k1,
             A_1_1, m2, k1, k1,
             B_1_1, k1, n2, n2,
-            B_1_2, k1, n2, n2);    
-    matrix_partial_subtraction(C_2_2, m2, n2, incRowC,
-                  M6, m2, n2, n2);
-    remove_matrix(M6); 
+            B_1_2, k1, n2, n2);
+    /*!!!!!!!!!!!!!!!!!!!!!!!!!!
+    compute C_2_2 by the formula
+    C_2_2 = M1 - M2 + M3 + M6
+    */
+    
+    strassen_calculate_C_2_2(
+        M1, m1, n1,
+        M2, m2, n1,
+        M3, m1, n2,
+        M6, m2, n2,
+        C_2_2, m2, n2, incRowC);
+    
+    // print_matrix(M2, 47, 245, incRowC);
+    // /*
+    // remove the working space
+    // */
+    remove_matrix(M1);
+    remove_matrix(M2);
+    remove_matrix(M3);
+    remove_matrix(M6);
 
 
     return;

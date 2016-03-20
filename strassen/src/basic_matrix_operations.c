@@ -5,21 +5,15 @@
 #include <immintrin.h>
 
 /*
-    vector addition, of length N
+    vector addition, of length N, we assert that the rows must be a multiple of 8
 */
 void add_row(Dtype* A, Dtype* B, Dtype* C, int N){
-    
-    int vector_size = (N / 8) * 8;
-    int j = 0;
-    for(; j < vector_size; j+=8){
-        __m256 r1 = _mm256_loadu_ps(A+j);
-        __m256 temp = _mm256_loadu_ps(&B[j]);
-        temp += r1;         
-        _mm256_storeu_ps(&C[j], temp);
-    }
 
-    for(; j < N; j++){
-        C[j] = A[j] + B[j];
+    for(int j = 0; j < N; j+=8){
+        __m256 r1 = _mm256_load_ps(A+j);
+        __m256 temp = _mm256_load_ps(B+j);
+        temp += r1;         
+        _mm256_store_ps(C+j, temp);
     }
 }
 
@@ -27,31 +21,21 @@ void add_row(Dtype* A, Dtype* B, Dtype* C, int N){
     vector subtraction, of length N
 */
 void subtract_row(Dtype* A, Dtype* B, Dtype* C, int N){
-    int vector_size = (N / 8) * 8;
-    int j = 0;
-    for(; j < vector_size; j+=8){
+    for(int j = 0; j < N; j+=8){
         __m256 r1 = _mm256_loadu_ps(A+j);
         __m256 temp = _mm256_loadu_ps(&B[j]);
         temp = r1 - temp;         
         _mm256_storeu_ps(&C[j], temp);
     }
-
-    for(; j < N; j++){
-        C[j] = A[j] - B[j];
-    }   
 }
 
 void copy_row(Dtype* A, Dtype* B, int N){
-    int vector_size = (N / 8) * 8;
-    int j = 0;
-    for(; j < vector_size; j+=8){
+    // int vector_size = (N / 8) * 8;
+    for(int j = 0; j < N; j+=8){
         __m256 r1 = _mm256_loadu_ps(B+j);
-        _mm256_storeu_ps(&A[j], r1);
+        _mm256_store_ps(&A[j], r1);
     }
 
-    for(; j < N; j++){
-        A[j] = B[j];
-    }
 }
 
 void matrix_addition(
@@ -61,10 +45,15 @@ void matrix_addition(
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC){
 
-    Dtype* A_base;
-    Dtype* B_base;
-    Dtype* C_base;
+    debug_assert(incRowA % 8 == 0);
+    debug_assert(incRowB % 8 == 0);
+    debug_assert(incRowC % 8 == 0);
+    debug_assert(((unsigned long)A & 31) == 0);
+    debug_assert(((unsigned long)B & 31) == 0);
+    debug_assert(((unsigned long)C & 31) == 0);
+
     for(int i = 0; i < M; i++){
+        // fprintf(stderr, "deal with row %d \n", i);
         add_row(&A[i*incRowA], &B[i*incRowB], &C[i*incRowC], N);
     }
 }
@@ -76,13 +65,17 @@ void matrix_subtraction(
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC){
 
+    debug_assert(incRowA % 8 == 0);
+    debug_assert(incRowB % 8 == 0);
+    debug_assert(incRowC % 8 == 0);
+
     for(int i = 0; i < M; i++){
         subtract_row(&A[i*incRowA], &B[i*incRowB], &C[i*incRowC], N);
     }
 }
 
 Dtype* make_matrix(const unsigned int M, const unsigned int N){
-    // Dtype* new_matrix = (Dtype*)malloc(sizeof(Dtype)*M*N);
+    
     Dtype* new_matrix = (Dtype*)_mm_malloc(sizeof(Dtype)*M*N,32);
     assert(new_matrix);
     return new_matrix;
@@ -143,7 +136,6 @@ void matrix_copyTo(
     assert(M_to <= M);
     assert(N_to <= N);
     for(int i = 0; i < M_to; i++){
-        // memcpy(&to_matrix[i*incRowTo], &from_matrix[i*incRowFrom], sizeof(Dtype)*N_to);
         copy_row(&to_matrix[i*incRowTo], &from_matrix[i*incRowFrom], N_to);         
     }
 }
@@ -182,9 +174,31 @@ Dtype* addDifferentSizedMatrix(
     Dtype* const Larger, int lm, int ln, int incRowL,
     Dtype* const Smaller, int sm, int sn, int incRowS){
 
-    Dtype* new_matrix = matrix_copy(Larger, lm, ln, incRowL);
-    matrix_partial_addition(new_matrix, lm, ln, ln,
-                            Smaller, sm, sn, incRowS);
+    // allocate the memory
+    assert(lm >= sm && ln >= sn);
+    Dtype* new_matrix = make_matrix(lm, ln);
+    // Dtype* new_matrix = matrix_copy(Larger, lm, ln, incRowL);
+    
+    assert(new_matrix);
+    // add up the common area
+    matrix_addition(sm, sn,
+                    Larger, incRowL,
+                    Smaller, incRowS,
+                    new_matrix, lm);
+
+    // add the extra rows from the larger matrix
+    // for(int i = sm; i < lm; i++){
+        // copy_row(&new_matrix[i*lm], &Larger[i*incRowL], lm);
+    // }
+    // add the extra columns from the larger matrix
+    // if(sn < ln){
+    //     const int difference = ln - sn;
+    //     for(int i = 0; i < sm; i++){
+    //         copy_row(&new_matrix[i*lm+sm], &Larger[i*incRowL+sm], difference);
+    //     }
+    // }
+    // matrix_partial_addition(new_matrix, lm, ln, ln,
+                            // Smaller, sm, sn, incRowS);
     return new_matrix;
 }
 

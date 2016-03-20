@@ -52,9 +52,9 @@ dgemm_macro_kernel(int     mc,
                     B_r,
                     beta_ptr,
                     C_r, 
-                    // incRowC, 
+                    incRowC, 
                     1,
-                    incRowC,
+                    // incRowC,
                     0);
 
             }
@@ -82,7 +82,6 @@ packed_mm(int            m,
     int _kc = k % KC;
     int mc, nc, kc;
     int i, j, l;
-
 
 
     for (j=0; j<nb; ++j) {

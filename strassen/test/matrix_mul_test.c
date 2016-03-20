@@ -33,7 +33,7 @@ int test1(int M, int N, int K){
         for(int j = 0; j < N; j++){
             if(C[i*incRowC+j] != K){
                 error++;
-                fprintf(stderr, "%d %d %f \n", i, j, C[i*incRowC+j]);
+                // fprintf(stderr, "%d %d %f \n", i, j, C[i*incRowC+j]);
             }
             }
     }
@@ -73,7 +73,7 @@ int test2(int M, int N, int K){
         for(int j = 0; j < N; j++){
             if(C[i*incRowC+j] != K*j){
                 error++;
-                fprintf(stderr, "%d %d %f \n", i, j, C[i*incRowC+j]);
+                // fprintf(stderr, "%d %d %f \n", i, j, C[i*incRowC+j]);
             }
             }
     }
@@ -94,9 +94,10 @@ void execute_test(void* test, int M, int N, int K, char* test_name){
 int main(int argc, char** argv) {
     
     execute_test(&test1, 100, 100, 100, "100x100x100_all_1");
-    execute_test(&test1, 513, 513, 513, "513x513x513_all_1");
+    execute_test(&test1, 512, 512, 512, "512x512x512_all_1");
+    execute_test(&test2, 1024, 1024, 1024, "1024x1024x1024_B_j");
     execute_test(&test2, 513, 513, 513, "513x513x513_B_j");
-    execute_test(&test2, 1024, 1024, 1024, "501x121x123_B_j");
     execute_test(&test1, 1213, 797, 2111, "1213x797x2111_all_1");
+    execute_test(&test1, 512, 128, 4608, "512x128x4608_all_1");
 
 }
