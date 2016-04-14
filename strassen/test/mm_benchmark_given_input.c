@@ -1,8 +1,8 @@
 #include "test_util.h"
 
-const int M_default = 256;
-const int N_default = 256;
-const int K_default = 256;
+const int M_default = 1024;
+const int N_default = 1024;
+const int K_default = 1024;
 const spacingFactor = 1;
 
 int main(int argc, char** argv) {
@@ -20,6 +20,7 @@ int main(int argc, char** argv) {
     ALGO = atoi(argv[4]);
   }
 
-  int NUM_REPEAT = 10;
-  benchmark_mm(M, N, K, NUM_REPEAT, ALGO);
+  int NUM_REPEAT = 1;
+  double clk = benchmark_mm(M, N, K, NUM_REPEAT, ALGO);
+  printf("%d, %d, %d, %f \n", M, N, K, clk);
 }

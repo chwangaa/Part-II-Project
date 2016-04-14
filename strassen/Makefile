@@ -1,8 +1,8 @@
-STRASSEN_INC = -I$(HOME)/Cambridge/Part-II-Project/strassen/include
+STRASSEN_INC = -I$(HOME)/Workspace/Part-II-Project/strassen/include
 LIB = -lm -lcblas
 
 BLIS_PREFIX = $(HOME)/blis
-BLIS_LIB = $(BLIS_PREFIX)/lib/libblis.a
+BLIS_LIB = $(BLIS_PREFIX)/lib/libblis-0.1.8-29-sandybridge.a
 BLIS_INC = $(BLIS_PREFIX)/include/blis
 
 

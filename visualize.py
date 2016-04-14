@@ -45,14 +45,14 @@ def plotScatter(file_names, title=None, ylabel=None, xlabel=None):
 	import matplotlib.pyplot as plt
 	fig = plt.figure()
 	ax1 = fig.add_subplot(111)
-	markers = [['b', 's'], ['r', 'o'], ['g', 'x'], ['y', '+']]
+	markers = [['b', 's'], ['r', 'o'], ['g', 'x'], ['y', '+'], ['m', '*']]
 	i = 0
 	for file_name in file_names:
 		xs, ys = getScatter(file_name)
 		ax1.scatter(xs, ys, c=markers[i][0], marker=markers[i][1], label=file_name)
 		i+=1
 
-	plt.legend(loc='lower right')
+	plt.legend(loc='upper left')
 	if title:
 		plt.title(title)
 	if xlabel:

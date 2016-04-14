@@ -4,111 +4,79 @@
 #include <stdlib.h>
 #include "fft_util.h"
 
+
 /*
-	input: [[1,1,1],[1,1,1],[1,1,1]]
-	output: [[1,1,1],[1,1,1],[1,1,1]]
+	input: [10,0,0,0,0,0,0,0,0,0]
+	output: [1,1,1,1,1,1,1,1,1,1]
 */
 void test1(){
-	unsigned int M = 3;
-	unsigned int N = 3;
-	FourierDomain2D* input = (FourierDomain2D*)malloc(sizeof(FourierDomain2D*)*M*N);
-	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
+	unsigned int M = 10;
+	FFT_Type* input = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
+	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
+	FFT_Type correct[10] = {1,1,1,1,1,1,1,1,1,1};
 	assert(input);
 	assert(output);
+	for(int i = 0; i < M; i++){
+		input[i] = 0;
+	}
+	input[0] = 10;
+
+	IFFT(M, input, output);
 
 	for(int i = 0; i < M; i++){
-		for(int j = 0; j < N; j++){
-			input[i*N+j] = 1.0 + 0.0*I;
-		}
-	}
-
-	FFT2(M, N,
-		input,
-		output);
-
-	IFFT2(M, N,
-		output,
-		0,
-		input);
-
-	for(int i = 0; i < M*N; i++){
-		assert(isEqual(input[i],1.0+0*I));
-		// print_complex(input[i]);
+		assert(isEqual(output[i], correct[i]));
 	}
 
 	fprintf(stderr, "the first test passes\n");
-	free(input);
 	free(output);
 }
 
+
 /*
-	input: [[1,1,1],[1,1,1],[1,1,1]]
-	output: [[1,1,1],[1,1,1],[1,1,1]]
+	input: [45, -5+1.53884177j, -5+6.88190960j
+			 -5+3.63271264j, -5+1.62459848j, -5,
+			 -5-1.62459848j, -5-3.63271264j, -5-6.88190960j,
+			 -5-1.53884177j]
+	output: [0,1,2,3,4,5,6,7,8,9]
 */
 void test2(){
-	unsigned int M = 3;
-	unsigned int N = 3;
-	FourierDomain2D* input = (FourierDomain2D*)malloc(sizeof(FourierDomain2D*)*M*N);
-	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	assert(input);
+	unsigned int M = 10;
+	FFT_Type input[10] = {45, -5+15.3884177*I, -5+6.88190960*I,
+			 -5+3.63271264*I, -5+1.62459848*I, -5,
+			 -5-1.62459848*I, -5-3.63271264*I, -5-6.88190960*I,
+			 -5-15.3884177*I};
+	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
 	assert(output);
 
-	for(int i = 0; i < M * N; i++){
-		input[i] = i;
-	}
+	IFFT(M, input, output);
 
-	FFT2(M, N,
-		input,
-		output);
-
-	IFFT2(M, N,
-		output,
-		0,
-		input);
-
-	for(int i = 0; i < M*N; i++){
-		assert(isEqual(input[i],i));
-		// print_complex(input[i]);
+	for(int i = 0; i < M; i++){
+		assert(isEqual(output[i], i));
 	}
 
 	fprintf(stderr, "the second test passes\n");
-	free(input);
 	free(output);
 }
 
-
-/*
-	input: [[1,2,3],[4,5,6],[7,8,9,],[10,11,12]]
-	output:[[1,2,3],[4,5,6],[7,8,9,],[10,11,12]]
-*/
 void test3(){
-	unsigned int M = 10;
-	unsigned int N = 20;
-	FourierDomain2D* input = (FourierDomain2D*)malloc(sizeof(FourierDomain2D*)*M*N);
-	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	assert(input);
+	int M = 500;
+	FFT_Type* input = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
+	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
 	assert(output);
 
-	for(int i = 0; i < M * N; i++){
-		input[i] = 0.1;
+	for(int i = 0; i < M; i++){
+		input[i] = (float)i / 10;
 	}
 
-	FFT2(M, N,
-		input,
-		output);
+	FFT(M, input, output);
+	IFFT(M, output, input);
 
-	IFFT2(M, N,
-		output,
-		0,
-		input);
-
-	for(int i = 0; i < M*N; i++){
-		assert(isEqual(input[i],0.1));
-		// print_complex(input[i]);
+	for(int i = 0; i < M; i++){
+		assert(isEqual(input[i], (float)i / 10));	
 	}
+
 
 	fprintf(stderr, "the third test passes\n");
-	free(input);
 	free(output);
 }
 
@@ -116,4 +84,6 @@ int main(){
 	test1();
 	test2();
 	test3();
+	// test4();
+	return 0;
 }

@@ -7,29 +7,25 @@
 
 /*
 	This test test whether the fft works properly
-	input: [[1,1,1],[1,1,1],[1,1,1]]
-	output: [[9,0,0],[0,0,0],[0,0,0]]
+	input: [1,1,1,1,1,1,1,1,1,1]
+	output: [10,0,0,0,0,0,0,0,0,0]
 */
 void test1(){
-	unsigned int M = 3;
-	unsigned int N = 3;
-	FFT_Type* input = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
+	unsigned int M = 7;
+	FFT_Type* input = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
+	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
+	FFT_Type correct[7] = {7, 0, 0, 0, 0, 0, 0};
 	assert(input);
 	assert(output);
 	for(int i = 0; i < M; i++){
-		for(int j = 0; j < N; j++){
-			input[i*N+j] = 1.0 + 0.0*I;
-		}
+		input[i] = 1 + 0.0*I;
+		output[i] = 0;
 	}
 
-	FFT2(M, N,
-		input,
-		output);
-	assert(isEqual(output[0],9.0+0.0*I));
+	FFT(M, input, output);
 
-	for(int i = 1; i < M*N; i++){
-		assert(isEqual(output[i], 0.0+0*I));
+	for(int i = 0; i < M; i++){
+		assert(isEqual(output[i], correct[i]));
 	}
 
 	fprintf(stderr, "the first test passes\n");
@@ -40,67 +36,34 @@ void test1(){
 
 /*
 	This test test whether the fft works properly
-	input: [[1,2,3],[4,5,6],[7,8,9]]
-	output: [[ 45.0+0.j        ,  -4.5+2.59807621j,  -4.5-2.59807621j],
-       		 [-13.5+7.79422863j,   0.0+0.j        ,   0.0+0.j        ],
-       		 [-13.5-7.79422863j,   0.0+0.j        ,   0.0+0.j        ]
-       		])
-
+	input: [0,1,2,3,4,5,6,7,8,9]
+	output: [45, -5+1.53884177j, -5+6.88190960j
+			 -5+3.63271264j, -5+1.62459848j, -5,
+			 -5-1.62459848j, -5-3.63271264j, -5-6.88190960j,
+			 -5-1.53884177j]
 */
 void test2(){
-	unsigned int M = 3;
-	unsigned int N = 3;
-	FFT_Type* input = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
+	unsigned int M = 10;
+	FFT_Type* input = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
+	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M);
+	FFT_Type correct[10] = {45, -5+15.3884177*I, -5+6.88190960*I,
+			 -5+3.63271264*I, -5+1.62459848*I, -5,
+			 -5-1.62459848*I, -5-3.63271264*I, -5-6.88190960*I,
+			 -5-15.3884177*I};
 	assert(input);
 	assert(output);
-
-	for(int i = 0; i < M*N; i++){
-			input[i] = i + 1;
+	for(int i = 0; i < M; i++){
+		input[i] = i;
+		output[i] = 0;
 	}
 
-	FFT2(M, N,
-		input,
-		output);
-		assert(isEqual(output[0],45.0 + 0*I));
-		assert(isEqual(output[1],-4.5+2.5980762*I));
-		assert(isEqual(output[2],-4.5-2.5980762*I));
-		assert(isEqual(output[3],-13.5+7.7942286*I));
-		assert(isEqual(output[4],0+0*I));
-		assert(isEqual(output[5],0+0*I));
-		assert(isEqual(output[6],-13.5-7.7942286*I));
-		assert(isEqual(output[7],0+0*I));
-		assert(isEqual(output[8],0+0*I));
+	FFT(M, input, output);
+
+	for(int i = 0; i < M; i++){
+		assert(isEqual(output[i], correct[i]));
+	}
 
 	fprintf(stderr, "the second test passes\n");
-	free(input);
-	free(output);
-}
-
-/*
-	input: [[1,2,3],[4,5,6],[7,8,9,],[10,11,12]]
-	output:[[1,2,3],[4,5,6],[7,8,9,],[10,11,12]]
-*/
-void test3(){
-	unsigned int M = 1;
-	unsigned int N = 2;
-	FFT_Type* input = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	FFT_Type* output = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	assert(input);
-	assert(output);
-
-	for(int i = 0; i < M * N; i++){
-		input[i] = i;
-	}
-
-	FFT2(M, N,
-		input,
-		output);
-
-	assert(isEqual(output[0], 1));
-	assert(isEqual(output[1], -1));
-
-	fprintf(stderr, "the third test passes\n");
 	free(input);
 	free(output);
 }
@@ -108,6 +71,7 @@ void test3(){
 int main(){
 	test1();
 	test2();
-	test3();
+	// test3();
+	// test4();
 	return 0;
 }

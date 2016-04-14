@@ -30,7 +30,6 @@ Dtype* strassen_make_M1_submatrix(
                     A_1_1, incRowA_1_1,
                     A_2_2, incRowA_2_2,
                     T1, K);
-
     Dtype* T2 = make_matrix(K, N);
     matrix_addition(K, N,
                     B_1_1, incRowB_1_1,
@@ -418,7 +417,7 @@ void strassen_mm(
        the base condition is defined as when all the dimensions are smaller than 256
     */
     // fprintf(stderr, "multiplying dimension m(%d), n(%d), k(%d) \n", m, n, k);
-    if(baseConditionReached(m, n, k) || m % 8 != 0 || n % 8 != 0 || k %8 != 0){
+    if(baseConditionReached(m, n, k) || m % 16 != 0 || n % 16 != 0 || k % 16 != 0){
         matrix_multiplication_base_case(
             m, n, k,
             A, incRowA,
@@ -475,11 +474,13 @@ void strassen_mm(
     construct M1 by the formula
     M1 = (A_1_1 + A_2_2) * (B_1_1 + B_2_2)
     */
+
     Dtype* M1 = strassen_make_M1_submatrix(    
             A_1_1, m1, k1, incRowA,
             A_2_2, m2, k2, incRowA,
             B_1_1, k1, n1, incRowB,
             B_2_2, k2, n2, incRowB);
+
     /*
     construct M4 by the formula
     M4 = A_2_2 * (B_2_1 - B_1_1)

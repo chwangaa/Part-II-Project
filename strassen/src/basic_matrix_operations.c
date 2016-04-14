@@ -22,17 +22,17 @@ void add_row(Dtype* A, Dtype* B, Dtype* C, int N){
 */
 void subtract_row(Dtype* A, Dtype* B, Dtype* C, int N){
     for(int j = 0; j < N; j+=8){
-        __m256 r1 = _mm256_loadu_ps(A+j);
-        __m256 temp = _mm256_loadu_ps(&B[j]);
+        __m256 r1 = _mm256_load_ps(A+j);
+        __m256 temp = _mm256_load_ps(&B[j]);
         temp = r1 - temp;         
-        _mm256_storeu_ps(&C[j], temp);
+        _mm256_store_ps(&C[j], temp);
     }
 }
 
 void copy_row(Dtype* A, Dtype* B, int N){
     // int vector_size = (N / 8) * 8;
     for(int j = 0; j < N; j+=8){
-        __m256 r1 = _mm256_loadu_ps(B+j);
+        __m256 r1 = _mm256_load_ps(B+j);
         _mm256_store_ps(&A[j], r1);
     }
 
@@ -45,17 +45,27 @@ void matrix_addition(
     const Dtype *B, const int incRowB,
     Dtype *C, const int incRowC){
 
+    /*
     debug_assert(incRowA % 8 == 0);
     debug_assert(incRowB % 8 == 0);
     debug_assert(incRowC % 8 == 0);
     debug_assert(((unsigned long)A & 31) == 0);
     debug_assert(((unsigned long)B & 31) == 0);
     debug_assert(((unsigned long)C & 31) == 0);
-
+    */
+    
     for(int i = 0; i < M; i++){
         // fprintf(stderr, "deal with row %d \n", i);
         add_row(&A[i*incRowA], &B[i*incRowB], &C[i*incRowC], N);
     }
+    
+    /*
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < N; j++){
+            C[i*incRowC+j] = A[i*incRowC+j] + B[i*incRowC+j];
+        }
+    }
+    */
 }
 
 void matrix_subtraction(

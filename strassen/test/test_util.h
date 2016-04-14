@@ -51,6 +51,13 @@ void single_test(int M, int N, int K, int ALGORITHM){
             B, incRowB,
             C, incRowC);
         break;
+        case 4:
+        SimpleMatrixMultiplication(
+            M, N, K,
+            A, incRowA,
+            B, incRowB,
+            C, incRowC);
+        break;        
         default:
         strassen_mm(
             M, N, K,
@@ -78,7 +85,7 @@ double benchmark_matrix_addition(int M, int N, int repeat){
     return dt;
 }
 
-void benchmark_mm(int M, int N, int K, int n, int ALGO){
+double benchmark_mm(int M, int N, int K, int n, int ALGO){
     uint64_t start_time = timestamp_us();
     uint64_t clk_start = clock();
     for(int i = 0; i < n; i++){
@@ -87,6 +94,7 @@ void benchmark_mm(int M, int N, int K, int n, int ALGO){
     double clk = (double)(clock() - clk) / n;
     uint64_t end_time = timestamp_us();
     double dt = (double)(end_time-start_time) / (1000.0*n);
+    /*
     switch(ALGO){
         case 0:
         fprintf(stderr, "BLIS takes %lf ms and %lf to complete %dx%dx%d\n", dt, clk, M, N, K);
@@ -103,4 +111,6 @@ void benchmark_mm(int M, int N, int K, int n, int ALGO){
         default:
         fprintf(stderr, "STRASSEN takes %lf ms and %lf to complete %dx%dx%d\n", dt, clk, M, N, K);
     }
+    */
+    return dt;
 }

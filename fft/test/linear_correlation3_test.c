@@ -119,10 +119,6 @@ void test3(){
 
 
 void test4(){
-	// FFT_Type* A = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	// FFT_Type* B = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	// FFT_Type* C = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
-	// assert(C);
 	FFT_Type A[48] = {1,0,0,0,
 				   0,1,0,0,
 				   0,0,1,0,
@@ -224,10 +220,57 @@ void test6(){
 	for(int i = 0; i < 24; i++){
 		// assert(isEqual(A[i], A_correct[i]));
 		for(int j = 0; j < 24; j++){
-			assert(isEqual(C[i*24+j], 290+i*140+j*5));
+			assert(isEqual_flexible(C[i*24+j], 290+i*140+j*5));
 		}
 	}
 	fprintf(stderr, "the 6th 3d linear correlation test passes\n");
+}
+
+
+void test7(){
+	// FFT_Type* A = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
+	// FFT_Type* B = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
+	// FFT_Type* C = (FFT_Type*)malloc(sizeof(FFT_Type*)*M*N);
+	// assert(C);
+	float A[48] = {1,0,0,0,
+				   0,1,0,0,
+				   0,0,1,0,
+				   0,0,0,1,
+				   1,2,3,4,
+				   5,6,7,8,
+				   9,10,11,12,
+				   13,14,15,16,
+				   1,1,1,1,
+				   1,1,1,1,
+				   1,1,1,1,
+				   1,1,1,1};
+	float B[12] = {0,2,
+	               3,0,
+	               1,0,
+	               0,1,
+	               1,1,
+	               1,1};
+	float C[9] = {1,1,1,1,1,1,1,1,1};
+
+	float Correct[9] = {12, 17, 16,
+	                    22, 22, 27,
+	                    28, 32, 32};
+	
+	FourierDomain2D* Af = (FourierDomain2D*)malloc(sizeof(FourierDomain2D)*4*4*3);
+	FourierDomain2D* Bf = (FourierDomain2D*)malloc(sizeof(FourierDomain2D)*4*4*3);
+	constructFTSetFromFloat(A, 4, 4, 3, 
+							Af, 4, 4);
+	constructFTSetFromFloatReverse(B, 2, 2, 3,
+								   Bf, 4, 4);
+	LinearCorrelation3InFourierDomain(Af, 4, 4, 3,
+									  Bf, 4, 4, 3,
+									  FFT_ACCUMULATE,
+									  C, 3, 3);
+	for(int i = 0; i < 9; i++){
+		assert(C[i]-Correct[i] < 0.0001 && C[i] - Correct[i] > -0.0001);
+	}
+
+	fprintf(stderr, "the 7th 3d linear correlation test passes\n");
 }
 
 int main(){
@@ -237,4 +280,5 @@ int main(){
 	test4();
 	test5();
 	test6();
+	test7();
 }
